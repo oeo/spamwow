@@ -136,7 +136,7 @@ This will yield an expected result, like this:
 }
 ```
 
-As you notice, the response provide useful information regarding how many 
+As you notice, the response provide useful information regarding how many
 total items exist in the data as well as pagination properties to allow you
 to build a UX without much trouble.
 
@@ -210,7 +210,7 @@ which is handy for developing locally.
 
 #### Invoking model methods
 
-In this example we'll call the `changeEvent` function over REST. 
+In this example we'll call the `changeEvent` function over REST.
 `vBXYrWZyzf` respresents the document ID we want to change.
 
 1. Traditional
@@ -277,49 +277,4 @@ data that you provided in the `pong` data field.
   }
 }
 ```
-
-## Deployment
-<p>
-  <img src="assets/cci.png" style="width:400px"/>
-</p>
-
-Platform is integrated with CircleCI and allows for simple deployment over
-the Serverless platform in a stage and production environment.
-
-<p>
-  <img src="assets/serverless.png" style="width:400px"/>
-</p>
-
-Some frameworks will allow you to have a Serverless deployed product but
-it's a complete shitshow to run it locally as a result of the way it
-was designed. That's not so with datum, you can run your application
-natively and locally and even host it on a VPS or your own dedicated server
-if you were inclined to do so.
-
----
-
-## @todo
-- [x] slightly more comprehensive readme
-- [x] finish continous integration routine for serverless using cci
-- [ ] implement queue/digestion abstraction for utilizing sqs
-- [ ] robust authentication 
-  - [ ] add ip whitelist bypass
-  - [ ] api: key management/revoke
-  - [ ] allow for passport/gsuite auth
-- [ ] begin documentation
-- [ ] implement a solid testing solution
-
----
-
-## MIT
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in 
-the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
-the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission and license should be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR 
-A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER OR NOT 
-ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
