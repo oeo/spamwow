@@ -3,7 +3,7 @@
    /   \ .======.\
    |   | |______||
    |   |   _____ |
-   |   |  /    / |  package.name (env)
+   |   |  /    / |  vpackage.name
    |   | /____/  |  vpackage.version
    | _ |         |
    |/ \|.-"```"-.|
