@@ -1,0 +1,34 @@
+ORIGINAL_HOST: "blackmoonlilith.art.blog"
+NEW_HOST: "localhost"
+ADDITIONAL_DOMAINS:
+  - "cdn.example.com"
+  - "api.example.com"
+  - "static.example.com"
+  - "s0.wp.com"
+  - "s1.wp.com"
+  - "s2.wp.com"
+  - "s3.wp.com"
+  - "wordpress.com"
+  - "wp.com"
+  - "gravatar.com"
+  - "stats.wp.com"
+
+TRACKING_SCRIPTS:
+  - "https?://www\\.google-analytics\\.com/analytics\\.js"
+  - "https?://ssl\\.google-analytics\\.com/ga\\.js"
+  - "https?://www\\.googletagmanager\\.com/gtm\\.js"
+  - "https?://stats\\.wp\\.com/[^'\"]+\\.js"
+  - "https?://pixel\\.wp\\.com/[^'\"]+\\.gif"
+
+INJECT_SCRIPT: |
+  <script>
+    // custom script to inject
+    console.log('custom script injected');
+  </script>
+
+STRING_REPLACEMENTS:
+  - from: "Black Moon Lilith"
+    to: "Blood Moon Lilith"
+  - from: "Musings of a Wandering Soul"
+    to: "This Website is Totally Proxied"
+
