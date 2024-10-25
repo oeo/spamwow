@@ -216,80 +216,69 @@ helpers.validateIntegrityHash = (obj, providedHash = null) ->
   calculatedHash = helpers.integrityHash(objToHash)
   return calculatedHash is hashToValidate
 
+helpers.renderTemplate = (template, data = {}) ->
+  processed = template.replace /\{([^}]+)\}/g, (match, expr) ->
+    try
+      # Convert HTML elements to strings
+      processed_expr = expr.replace(/<[^>]+>[^<]*<\/[^>]+>|<[^>]+\/>/g, (html) ->
+        JSON.stringify(html)
+      ).trim()
+
+      # Simple JavaScript evaluation with the data context
+      fn = Function('data', """
+        with(data) {
+          return (${processed_expr});
+        }
+      """)
+
+      result = fn(data)
+      return result?.toString() or ''
+    catch e
+      console.error 'Error processing:', expr
+      console.error e
+      return match
+
+  return processed
+
 module.exports = helpers
 
 if !module.parent
-  testObj = {
-    "birth_date": "07/09/1942",
-    "city": "Coraopolis",
-    "group": null,
-    "email": "taky@taky.com",
-    "fname": "taky",
-    "social": "805-37-770",
-    "identity_document_expiration": "01/01/2025",
-    "identity_document_issuer": "USA",
-    "identity_document_number": "10ABC51239",
-    "identity_document_type": "Passport",
-    "lname": "PERSINGER",
-    "phone": "18149233715",
-    "zip": "15108",
-    "state": "PA",
-    "street": "1045 W 27th",
-    "document_tokens": {
-      "front": "bc3e79f0b4ed4ecb88b396b61fa7b9b5",
-      "back": "3ddf918d43494e5ca7938d1ec54ec3a1"
-    },
-    "uuid": "97f5d43181c94b6f860043ece08102c5",
-    "fullAddress": "310 Scenic Ct, Coraopolis, PA 15108"
+
+  # Example usage:
+  template = """
+    <p>Hello, {firstName? || "Friend"}</p>
+    { if (1){ return '1' } }
+    {
+      if(isRegisteredDemocrat) {
+        return (
+          <p>TEST1: I noticed you're a registered democrat</p>
+        )
+      }else{
+        return (
+          <p>TEST1: You aren't a Democrat.</p>
+        )
+      }
+    }
+    <p>Thanks for reading my email click <a href={unsubLink}>here</a> to unsub.</p>
+    {
+      (function(){
+        return "Oh fuck me."
+      })()
+    }
+    {"Just a string"}
+    {
+      true && (
+        <div>If one test at end..</div>
+      )
+    }
+  """
+
+  result = helpers.renderTemplate template, {
+    firstName: "John"
+    isRegisteredDemocrat: true
+    unsubLink: "http://example.com/unsub"
+    items: [1,2,3]
   }
 
-  testObj2 = {
-    "fullAddress": "310 Scenic Ct, Coraopolis, PA 15108"
-    "birth_date": "07/09/1942",
-    "city": "Coraopolis",
-    "group": null,
-    "email": "taky@taky.com",
-    "fname": "taky",
-    "identity_document_expiration": "01/01/2025",
-    "social": "805-37-770",
-    "identity_document_issuer": "USA",
-    "identity_document_number": "10ABC51239",
-    "identity_document_type": "Passport",
-    "lname": "PERSINGER",
-    "phone": "18149233715",
-    "zip": "15108",
-    "state": "PA",
-    "street": "1045 W 27th",
-    "document_tokens": {
-      "front": "bc3e79f0b4ed4ecb88b396b61fa7b9b5",
-      "back": "3ddf918d43494e5ca7938d1ec54ec3a1"
-    },
-    "uuid": "97f5d43181c94b6f860043ece08102c5",
-  }
-
-  log /testObj/, testObj
-  log /integrityHash/, integrityHash = helpers.integrityHash(testObj, true)
-  log /normalSha/, integrityHash.firstHash
-  log /validateIntegrityHash/, helpers.validateIntegrityHash(testObj, integrityHash.integrityHash)
-
-  log '----------------'
-
-  for x in [1..2]
-    log /testObj2/, testObj2
-    log /integrityHash2/, integrityHash2 = helpers.integrityHash(testObj2, true)
-    log /normalSha2/, integrityHash2.firstHash
-    log /validateIntegrityHash2/, helpers.validateIntegrityHash(testObj2, integrityHash2.integrityHash)
-    if x is 1
-      try delete testObj2.zip
-
-  log '----------------'
-
-  testObj3 = _.cloneDeep(testObj2)
-  testObj3.integrityHash = helpers.integrityHash(testObj3)
-
-  log /testObj3/, testObj3
-  log /integrityHash3/, integrityHash3 = helpers.integrityHash(testObj3, true)
-  log /validateIntegrityHash3/, helpers.validateIntegrityHash(testObj3)
-
-  exit 0
+  console.log result
 
