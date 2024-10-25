@@ -88,6 +88,6 @@ AWSAccount.plugin(basePlugin)
 AWSAccount.methods.test = (opt = {}) ->
   throw new Error 'AWSAccount.test not implemented'
 
-model = mongoose.model modelOpts.name, Event
+model = mongoose.model modelOpts.name, AWSAccount
 module.exports = EXPOSE(model)
 
