@@ -2,6 +2,7 @@
 module.exports = {
   Domains: require('./domains')
   Emails: require('./emails')
+  EmailDns: require('./emailDns')
   Events: require('./events')
 }
 

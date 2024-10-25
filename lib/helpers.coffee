@@ -10,6 +10,8 @@ crypto = require 'crypto'
 UUID = require('short-unique-id')
 uuid = new UUID { length: 10 }
 
+{ render } = require './macros'
+
 helpers = {
   uuid: -> uuid.rnd()
   wait: (ms) ->
@@ -216,69 +218,16 @@ helpers.validateIntegrityHash = (obj, providedHash = null) ->
   calculatedHash = helpers.integrityHash(objToHash)
   return calculatedHash is hashToValidate
 
-helpers.renderTemplate = (template, data = {}) ->
-  processed = template.replace /\{([^}]+)\}/g, (match, expr) ->
-    try
-      # Convert HTML elements to strings
-      processed_expr = expr.replace(/<[^>]+>[^<]*<\/[^>]+>|<[^>]+\/>/g, (html) ->
-        JSON.stringify(html)
-      ).trim()
+helpers.renderMacros = helpers.render = (str, obj) ->
+  render str, obj
 
-      # Simple JavaScript evaluation with the data context
-      fn = Function('data', """
-        with(data) {
-          return (${processed_expr});
-        }
-      """)
-
-      result = fn(data)
-      return result?.toString() or ''
-    catch e
-      console.error 'Error processing:', expr
-      console.error e
-      return match
-
-  return processed
-
+##
 module.exports = helpers
 
 if !module.parent
+  console.log helpers.integrityHash {a:1,b:2,c:3}
 
-  # Example usage:
-  template = """
-    <p>Hello, {firstName? || "Friend"}</p>
-    { if (1){ return '1' } }
-    {
-      if(isRegisteredDemocrat) {
-        return (
-          <p>TEST1: I noticed you're a registered democrat</p>
-        )
-      }else{
-        return (
-          <p>TEST1: You aren't a Democrat.</p>
-        )
-      }
-    }
-    <p>Thanks for reading my email click <a href={unsubLink}>here</a> to unsub.</p>
-    {
-      (function(){
-        return "Oh fuck me."
-      })()
-    }
-    {"Just a string"}
-    {
-      true && (
-        <div>If one test at end..</div>
-      )
-    }
-  """
-
-  result = helpers.renderTemplate template, {
-    firstName: "John"
-    isRegisteredDemocrat: true
-    unsubLink: "http://example.com/unsub"
-    items: [1,2,3]
-  }
-
-  console.log result
+  console.log = helpers.renderMacros """
+    Hello, {{world}}
+  """, {world: 'World'}
 

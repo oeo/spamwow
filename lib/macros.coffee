@@ -20,7 +20,11 @@ render = (templateString, data = {}) ->
   return template(data)
 
 ##
-module.exports = render
+module.exports = {
+  render
+  swag
+  Handlebars
+}
 
 if !module.parent
   log render "Hello, {{name}}!", {name: "World"}

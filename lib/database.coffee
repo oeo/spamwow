@@ -8,13 +8,6 @@ _ = require 'lodash'
 mongoose = require 'mongoose'
 IORedis = require 'ioredis'
 
-redisOptions = {
-  host: env.REDIS_HOST or '127.0.0.1'
-  port: env.REDIS_PORT or 6379
-  password: env.REDIS_PASSWORD
-  db: env.REDIS_DB_INDEX or 0
-}
-
 connections = {
   redis: 0
   mongo: 0
@@ -29,7 +22,8 @@ mongoose.connect env.MONGODB_URI
   .catch (error) -> L.error error
 
 # redis
-redis = new IORedis(redisOptions)
+console.log env.REDIS_URI
+redis = new IORedis env.REDIS_URI
   .on 'error', (error) -> L.error error
   .on 'connect', ->
     connections.redis = true
