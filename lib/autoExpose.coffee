@@ -18,6 +18,7 @@ modelRouter = (({ model }) ->
     for x in _.keys(model.schema.methods)
       continue if x !in opt.methods
 
+      # skip private methods
       if x.startsWith('_')
         # L "skipping `#{model.modelName}.methods.#{x}()` (private)"
         continue
@@ -47,6 +48,7 @@ modelRouter = (({ model }) ->
     for x in _.keys(model.schema.statics)
       continue if x !in opt.statics
 
+      # skip private static methods
       if x.startsWith('_')
         # L "skipping `#{model.modelName}.statics.#{x}()` (private)"
         continue

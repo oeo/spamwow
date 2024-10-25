@@ -22,22 +22,26 @@ Event = new Schema {
     required: true
   }
 
-  player: {
+  email: {
     type: String
+    ref: 'Email'
+  }
+
+  domain: {
+    type: String
+    ref: 'Domain'
+  }
+
+  campaign: {
+    type: String
+    ref: 'Campaign'
   }
 
 }, modelOpts.schema
 
 Event.plugin(basePlugin)
 
-Event.methods.changeEvent = ({ newEvent }) ->
-  @event = newEvent
-
-  try
-    return await @save()
-  catch e
-    return e
-
+# POST /events/ping
 Event.statics.ping = ({ pong }) ->
   return { pong }
 

@@ -21,7 +21,7 @@ models.basePlugin = (schema) ->
     @_id ?= helpers.uuid()
     @mtime = helpers.time()
     @ctime ?= @mtime
-    
+
     next()
 
   # reset to default
