@@ -1,13 +1,20 @@
 # vim: set expandtab tabstop=2 shiftwidth=2 softtabstop=2
-{ log } = console
-{ env } = process
+{ L, log } = require './../lib/logger'
+{ exit, env } = process
 
 { mongoose, redis } = require './../lib/database'
 
 Schema = mongoose.Schema
 { basePlugin, EXPOSE } = require './../lib/models'
 
+helpers = require './../lib/helpers'
 { encrypt, decrypt } = require './../lib/crypto'
+
+_ = require 'lodash'
+
+Domain = require './domains'
+
+AWS = require 'aws-sdk'
 
 modelOpts = {
   name: 'AwsAccount'
@@ -19,12 +26,16 @@ modelOpts = {
 
 AwsAccount = new Schema {
 
-  active: { type: Boolean, default: true }
-
   name: {
     type: String
     required: true
     trim: true
+  }
+
+  AWS_ACCOUNT_ID: {
+    type: Number
+    unique: true
+    required: true
   }
 
   AWS_ACCESS_KEY_ID: {
@@ -86,32 +97,325 @@ AwsAccount = new Schema {
     default: 'us-east-1'
   }
 
+  isValid: {
+    type: Boolean
+    default: false
+  }
+
+  timeLastChecked: {
+    type: Number
+    default: 0
+  }
+
 }, modelOpts.schema
 
 AwsAccount.plugin(basePlugin)
 
-# @note test the aws account connectivity
-# POST /awsaccounts/:_id/test
-AwsAccount.methods.test = (opt = {}) ->
-  throw new Error 'AwsAccount.test not implemented'
+AwsAccount.methods.configureAWS = -> 
+  AWS.config.update {
+    accessKeyId: @AWS_ACCESS_KEY_ID,
+    secretAccessKey: @AWS_SECRET_ACCESS_KEY,
+    region: @AWS_REGION
+  }
 
-# @note: this will create an entry in the domains collection
+AwsAccount.pre 'save', (next) ->
+  @configureAWS()
+
+  if @isNew
+    try
+      sts = new AWS.STS()
+      data = await sts.getCallerIdentity().promise()
+      
+      @AWS_ACCOUNT_ID = +data.Account
+
+      @isValid = true
+      @timeLastChecked = helpers.time() 
+
+      # credentials are valid
+      return next()
+
+    catch error
+      next(new Error("Error validating AWS credentials: #{error.message}"))
+
+  next()
+
+# POST /awsaccounts/:_id/testValidity
+AwsAccount.methods.testValidity = (opt = {}) ->
+  @configureAWS()
+
+  try
+    sts = new AWS.STS()
+
+    data = await sts.getCallerIdentity().promise()
+
+    now = helpers.time()
+
+    if +data?.Account != @AWS_ACCOUNT_ID
+      @isValid = false
+      @timeLastChecked = now 
+      try await @save()
+
+      throw new Error "AWS credentials are invalid"
+  
+    @isValid = true
+    @timeLastChecked = now
+
+    try await @save()
+
+    return true 
+
+  catch error
+    throw new Error("Error validating AWS credentials: #{error.message}")
+
+# @note: this will eventually create an entry in the domains collection
 # POST /awsaccounts/:_id/purchaseDomain
 AwsAccount.methods.purchaseDomain = ({ domain }) ->
-  throw new Error 'AwsAccount.purchaseDomain not implemented'
+  @configureAWS()
+
+  try
+    route53Domains = new AWS.Route53Domains()
+
+    params = {
+      DomainName: domain
+      AutoRenew: false 
+      DurationInYears: 1
+    }
+
+    L "Purchasing domain: #{domain}"
+    result = await route53Domains.registerDomain(params).promise()
+
+    # validate that the domain was actually registered
+    try
+      domainDetails = await route53Domains.getDomainDetail({ DomainName: domain }).promise()
+
+      if domainDetails.DomainName isnt domain
+        throw new Error("Domain registration failed: Domain not found after registration")
+
+    catch error
+      throw new Error("Failed to validate domain registration: #{error.message}")
+
+    # Create a domain entry in the domains collection
+    newDomain = new Domain({
+      awsAccount: @_id
+      domain: domain
+    })
+
+    try
+      await newDomain.save()
+    catch error
+      throw new Error("Failed to save domain in database: #{error.message}")
+
+    return newDomain
+
+  catch error
+    L.error "Failed to purchase domain: #{error.message}"
+    throw new Error "Failed to purchase domain: #{error.message}"
 
 # POST /awsaccounts/:_id/listDomains
 AwsAccount.methods.listDomains = (opt = {}) ->
-  throw new Error 'AwsAccount.listDomains not implemented'
+  @configureAWS()
+
+  try
+    route53Domains = new AWS.Route53Domains()
+    result = await route53Domains.listDomains({}).promise()
+
+    domains = result.Domains.map (domain) ->
+      {
+        DomainName: domain.DomainName
+        AutoRenew: domain.AutoRenew
+        TransferLock: domain.TransferLock
+        Expiry: domain.Expiry
+      }
+
+    return domains
+  catch error
+    L.error "Failed to list domains: #{error.message}"
+    throw new Error "Failed to list domains: #{error.message}"
+
+# POST /awsaccounts/:_id/syncDomains
+AwsAccount.methods.syncDomains = (opt = {}) ->
+  @configureAWS()
+
+  try
+    route53Domains = new AWS.Route53Domains()
+    result = await route53Domains.listDomains({}).promise()
+
+    for domain in result.Domains
+      existingDomain = await Domain.findOne({ domain: domain.DomainName })
+      
+      if !existingDomain
+        newDomain = new Domain({
+          awsAccount: @_id
+          domain: domain.DomainName
+        })
+        
+        try
+          await newDomain.save()
+          L "Added new domain: #{domain.DomainName}"
+        catch error
+          L.error "Failed to save domain #{domain.DomainName}: #{error.message}"
+      else
+        L "Domain already exists: #{domain.DomainName}"
+
+    return { message: "Domains synced successfully" }
+  catch error
+    L.error "Failed to sync domains: #{error.message}"
+    throw new Error "Failed to sync domains: #{error.message}"
+
 
 # POST /awsaccounts/:_id/configureDkim
 AwsAccount.methods.configureDkim = ({ domain }) ->
-  throw new Error 'AwsAccount.configureDkim not implemented'
+  @configureAWS()
+
+  try
+    # verify domain is in this AWS account
+    route53Domains = new AWS.Route53Domains()
+
+    try
+      await route53Domains.getDomainDetail({ DomainName: domain }).promise()
+    catch error
+      if error.code is 'DomainNotFound'
+        throw new Error "Domain #{domain} is not in this AWS account"
+      throw error
+
+    # initialize route 53 client
+    route53 = new AWS.Route53()
+
+    # get hosted zone id for the domain
+    listHostedZonesResponse = await route53.listHostedZonesByName({ DNSName: domain }).promise()
+    hostedZoneId = _.get(listHostedZonesResponse, 'HostedZones[0].Id')
+    
+    if !hostedZoneId
+      throw new Error "No hosted zone found for domain #{domain}"
+
+    # delete existing dkim and spf records if any
+    existingRecords = await route53.listResourceRecordSets({ HostedZoneId: hostedZoneId }).promise()
+
+    changesToDelete = _.chain(existingRecords.ResourceRecordSets)
+      .filter((record) -> 
+        record.Type in ['TXT', 'CNAME'] && (_.includes(record.Name, '_domainkey') || _.includes(record.Name, 'spf'))
+      )
+      .map((record) -> 
+        {
+          Action: 'DELETE'
+          ResourceRecordSet: record
+        }
+      )
+      .value()
+
+    if !_.isEmpty(changesToDelete)
+      await route53.changeResourceRecordSets({
+        HostedZoneId: hostedZoneId
+        ChangeBatch: { Changes: changesToDelete }
+      }).promise()
+
+    # generate new dkim keys
+    { publicKey, privateKey } = await new Promise (resolve, reject) ->
+      require('crypto').generateKeyPair 'rsa',
+        modulusLength: 2048
+        publicKeyEncoding: { type: 'spki', format: 'pem' }
+        privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+        (err, publicKey, privateKey) ->
+          if err then reject(err) else resolve({ publicKey, privateKey })
+
+    # create dkim dns records
+    dkimSelector = "dkim1"
+    dkimRecord = _.chain(publicKey)
+      .replace(/-----BEGIN PUBLIC KEY-----/, '')
+      .replace(/-----END PUBLIC KEY-----/, '')
+      .replace(/\s+/g, '')
+      .value()
+    
+    # split the dkim record into chunks of 250 characters
+    stringToRoute53Safe = (string) ->
+      splitString = (string[i..(i + 249)] for i in [0...string.length] by 250)
+      splitString.map((v) -> "\"#{v}\"").join(' ')
+    
+    dkimValue = "v=DKIM1; k=rsa; p=#{dkimRecord}"
+    dkimSafeValue = stringToRoute53Safe(dkimValue)
+    
+    dkimChanges = [
+      {
+        Action: 'CREATE'
+        ResourceRecordSet:
+          Name: "#{dkimSelector}._domainkey.#{domain}"
+          Type: 'TXT'
+          TTL: 300
+          ResourceRecords: [{ Value: dkimSafeValue }]
+      }
+    ]
+
+    # create spf record
+    spfChanges = [
+      {
+        Action: 'CREATE'
+        ResourceRecordSet:
+          Name: domain
+          Type: 'TXT'
+          TTL: 300
+          ResourceRecords: [{ Value: '"v=spf1 include:_spf.google.com ~all"' }]
+      }
+    ]
+
+    # apply dns changes
+    await route53.changeResourceRecordSets({
+      HostedZoneId: hostedZoneId
+      ChangeBatch: { Changes: [...dkimChanges, ...spfChanges] }
+    }).promise()
+
+    return {
+      success: true
+      message: "DKIM and SPF records configured successfully"
+      dkimSelector: dkimSelector
+      dkimPrivateKey: privateKey
+    }
+
+  catch error
+    L.error "Failed to configure DKIM: #{error.message}"
+    throw new Error "Failed to configure DKIM: #{error.message}"
 
 # POST /awsaccounts/:_id/upsertDnsRecord
 AwsAccount.methods.upsertDnsRecord = ({ domain, record }) ->
-  throw new Error 'AwsAccount.addDnsRecord not implemented'
+  @configureAWS()
 
+  try
+    route53 = new AWS.Route53()
+
+    # find the hosted zone id for the domain
+    listHostedZonesResponse = await route53.listHostedZones().promise()
+    hostedZone = listHostedZonesResponse.HostedZones.find (zone) -> zone.Name == "#{domain}."
+
+    unless hostedZone
+      throw new Error "Hosted zone not found for domain: #{domain}"
+
+    hostedZoneId = hostedZone.Id
+
+    # prepare the change batch
+    change = {
+      Action: 'UPSERT'
+      ResourceRecordSet:
+        Name: record.name
+        Type: record.type
+        TTL: record.ttl || 300
+        ResourceRecords: [{ Value: record.value }]
+    }
+
+    # apply dns changes
+    await route53.changeResourceRecordSets({
+      HostedZoneId: hostedZoneId
+      ChangeBatch: { Changes: [change] }
+    }).promise()
+
+    return {
+      success: true
+      message: "DNS record upserted successfully"
+      record: record
+    }
+
+  catch error
+    L.error "Failed to upsert DNS record: #{error.message}"
+    throw new Error "Failed to upsert DNS record: #{error.message}"
+
+##
 model = mongoose.model modelOpts.name, AwsAccount
 module.exports = EXPOSE(model)
-

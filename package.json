@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "array-shuffle": "^3.0.0",
+    "aws-sdk": "^2.1691.0",
     "axios": "^1.7.2",
     "body-parser": "^1.20.2",
     "coffeescript": "^2.7.0",
