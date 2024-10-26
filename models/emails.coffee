@@ -196,10 +196,10 @@ Email.statics.applyAction = ({ email, action, revenue = 0 }) ->
     throw new Error('Invalid action type')
 
   try
-    # Sanitize/normalize the email first
+    # sanitize/normalize the email first
     normalizedEmail = @_sanitize(email)
 
-    # Find or return error
+    # find or return error
     doc = await @findOne({ email: normalizedEmail })
     if not doc?
       throw new Error('Email not found')
@@ -209,7 +209,7 @@ Email.statics.applyAction = ({ email, action, revenue = 0 }) ->
 
     now = helpers.time()
 
-    # Handle negative actions
+    # handle negative actions
     if action in NEGATIVE_ACTIONS
       switch action
         when 'unsub'
@@ -230,7 +230,7 @@ Email.statics.applyAction = ({ email, action, revenue = 0 }) ->
           if doc.bounces.soft >= SETTINGS.SOFT_BOUNCE_THRESHOLD
             doc.status = 'hardbounce'
 
-    # Handle positive actions
+    # handle positive actions
     else
       switch action
         when 'sent'
