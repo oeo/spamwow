@@ -90,9 +90,27 @@ AwsAccount = new Schema {
 
 AwsAccount.plugin(basePlugin)
 
+# @note test the aws account connectivity
 # POST /awsaccounts/:_id/test
 AwsAccount.methods.test = (opt = {}) ->
   throw new Error 'AwsAccount.test not implemented'
+
+# @note: this will create an entry in the domains collection
+# POST /awsaccounts/:_id/purchaseDomain
+AwsAccount.methods.purchaseDomain = ({ domain }) ->
+  throw new Error 'AwsAccount.purchaseDomain not implemented'
+
+# POST /awsaccounts/:_id/listDomains
+AwsAccount.methods.listDomains = (opt = {}) ->
+  throw new Error 'AwsAccount.listDomains not implemented'
+
+# POST /awsaccounts/:_id/configureDkim
+AwsAccount.methods.configureDkim = ({ domain }) ->
+  throw new Error 'AwsAccount.configureDkim not implemented'
+
+# POST /awsaccounts/:_id/upsertDnsRecord
+AwsAccount.methods.upsertDnsRecord = ({ domain, record }) ->
+  throw new Error 'AwsAccount.addDnsRecord not implemented'
 
 model = mongoose.model modelOpts.name, AwsAccount
 module.exports = EXPOSE(model)

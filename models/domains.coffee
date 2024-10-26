@@ -15,9 +15,15 @@ modelOpts = {
   }
 }
 
+# mirror domains
 Domain = new Schema {
 
-  active: { type: Boolean, default: true }
+  # aws account managing this domain
+  awsAccount: {
+    type: String
+    ref: 'AwsAccount'
+    required: true
+  }
 
   # our-domain-name.com
   domain: {
@@ -64,7 +70,19 @@ Domain.methods.checkHealth = (opt = {}) ->
   # @todo: ping domain
   # @todo: ping mitmHost
   # @todo: ping originHost
+  # @todo: check mx records
+  # @todo: check dkim/spf records
 
+  return next new Error 'Unimplemented'
+
+# @note this calls @awsAccount.configureDkim { @domain }
+# POST /domains/:id/configureDkim
+Domain.methods.configureDkim = (opt = {}) ->
+  return next new Error 'Unimplemented'
+
+# @note this calls @awsAccount.upsertDnsRecord { @domain, record
+# POST /domains/:id/configureDkim
+Domain.methods.configureDkim = ({ record }) ->
   return next new Error 'Unimplemented'
 
 model = mongoose.model modelOpts.name, Domain
