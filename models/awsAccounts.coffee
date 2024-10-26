@@ -7,14 +7,13 @@
 Schema = mongoose.Schema
 { basePlugin, EXPOSE } = require './../lib/models'
 
-helpers = require './../lib/helpers'
 { encrypt, decrypt } = require './../lib/crypto'
+helpers = require './../lib/helpers'
 
+AWS = require 'aws-sdk'
 _ = require 'lodash'
 
 Domain = require './domains'
-
-AWS = require 'aws-sdk'
 
 modelOpts = {
   name: 'AwsAccount'
@@ -117,7 +116,6 @@ AwsAccount.methods._configureAWS = ->
     secretAccessKey: @AWS_SECRET_ACCESS_KEY,
     region: @AWS_REGION
   }
-
 
 AwsAccount.pre 'save', (next) ->
   @_configureAWS()
@@ -262,6 +260,12 @@ AwsAccount.methods.syncDomains = (opt = {}) ->
         try
           await newDomain.save()
           L "Added new domain: #{domain.DomainName}"
+
+          # configure DKIM and SPF for the new domain
+          if opt.configureDkim
+            L "Configuring DKIM and SPF for new domain: #{domain.DomainName}"
+            await newDomain.configureDkim()
+
         catch error
           L.error "Failed to save domain #{domain.DomainName}: #{error.message}"
       else
@@ -274,7 +278,7 @@ AwsAccount.methods.syncDomains = (opt = {}) ->
 
 # @note: this will create a DKIM and SPF record for the domain
 # POST /awsaccounts/:_id/configureDkim
-AwsAccount.methods.configureDkim = ({ domain }) ->
+AwsAccount.methods.configureDkim = ({ domain, spfInclude = [] }) ->
   @_configureAWS()
 
   try
@@ -303,7 +307,7 @@ AwsAccount.methods.configureDkim = ({ domain }) ->
 
     changesToDelete = _.chain(existingRecords.ResourceRecordSets)
       .filter((record) -> 
-        record.Type in ['TXT', 'CNAME'] and (_.includes(record.Name, '_domainkey') or _.includes(record.Name, 'spf'))
+        record.Type in ['TXT', 'CNAME'] and (_.includes(record.Name, '_domainkey') or record.Name is "#{domain}.")
       )
       .map((record) -> 
         {
@@ -313,11 +317,17 @@ AwsAccount.methods.configureDkim = ({ domain }) ->
       )
       .value()
 
-    if !_.isEmpty(changesToDelete)
-      await route53.changeResourceRecordSets({
-        HostedZoneId: hostedZoneId
-        ChangeBatch: { Changes: changesToDelete }
-      }).promise()
+    if changesToDelete
+      try
+        await route53.changeResourceRecordSets({
+          HostedZoneId: hostedZoneId
+          ChangeBatch: { Changes: changesToDelete }
+        }).promise()
+        # wait a bit for deletion to propagate
+        await new Promise (resolve) -> setTimeout(resolve, 5000)
+      catch error
+        L.error "Failed to delete existing records: #{error.message}"
+        # continue anyway since records may not exist
 
     # generate new dkim keys
     { publicKey, privateKey } = await new Promise (resolve, reject) ->
@@ -346,7 +356,7 @@ AwsAccount.methods.configureDkim = ({ domain }) ->
     
     dkimChanges = [
       {
-        Action: 'CREATE'
+        Action: 'UPSERT'
         ResourceRecordSet:
           Name: "#{dkimSelector}._domainkey.#{domain}"
           Type: 'TXT'
@@ -354,16 +364,48 @@ AwsAccount.methods.configureDkim = ({ domain }) ->
           ResourceRecords: [{ Value: dkimSafeValue }]
       }
     ]
+    # create spf record with core email providers
+    defaultIncludes = [
+      '_spf.google.com'                # google workspace
+      'amazonses.com'                  # amazon ses
+      'sendgrid.net'                   # sendgrid
+      'spf.protection.outlook.com'     # microsoft 365
+      'mailgun.org'                    # mailgun
+    ]
+    
+    allIncludes = _.uniq([...defaultIncludes, ...spfInclude])
+    
+    # split spf includes into chunks to avoid route53 length limits
+    spfChunks = []
+    currentChunk = []
+    currentLength = 0
+    
+    for include in allIncludes
+      includeStr = "include:#{include}"
+      # account for spaces and quotes in final string
+      if currentLength + includeStr.length + 10 > 250
+        spfChunks.push currentChunk
+        currentChunk = []
+        currentLength = 0
+      
+      currentChunk.push includeStr
+      currentLength += includeStr.length + 1
+    
+    spfChunks.push currentChunk if currentChunk.length
+    
+    # create spf value with mechanism chunks
+    spfValue = spfChunks.map((chunk) -> 
+      "v=spf1 #{chunk.join(' ')} ~all"
+    ).join('')
 
-    # create spf record
     spfChanges = [
       {
-        Action: 'CREATE'
+        Action: 'UPSERT'
         ResourceRecordSet:
           Name: domain
           Type: 'TXT'
           TTL: 300
-          ResourceRecords: [{ Value: '"v=spf1 include:_spf.google.com ~all"' }]
+          ResourceRecords: [{ Value: "\"#{spfValue}\"" }]
       }
     ]
 

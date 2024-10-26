@@ -9,6 +9,8 @@ Schema = mongoose.Schema
 
 _ = require 'lodash'
 
+AWS = require 'aws-sdk'
+
 modelOpts = {
   name: 'Domain'
   schema: {
@@ -17,7 +19,6 @@ modelOpts = {
   }
 }
 
-# mirror domains
 Domain = new Schema {
 
   # aws account managing this domain
@@ -27,7 +28,7 @@ Domain = new Schema {
     required: true
   }
 
-  # our-domain-name.com
+  # ourwebsite.com 
   domain: {
     type: String
     required: true
@@ -36,38 +37,31 @@ Domain = new Schema {
     trim: true
   }
 
-  # real-domain-name.com
+  # mirroredwebsite.com 
   mirrorHost: {
     type: String
     lowercase: true
     trim: true
   }
 
-  dkimSelector: {
-    type: String
-    default: null 
-  }
+  # dkim properties
+  dkimSelector: { type: String, default: null }
+  dkimPrivateKey: { type: String, default: null }
+  timeDkimLastUpdated: { type: Number, default: 0 }
 
-  dkimPrivateKey: { 
-    type: String
-    default: null 
-  }
-
-  isHealthy: {
-    type: Boolean
-    default: false
-  }
-
-  timeLastChecked: {
-    type: Number
-    default: 0
-  }
+  # health properties
+  isHealthy: { type: Boolean, default: false }
+  timeLastChecked: { type: Number, default: 0 }
 
 }, modelOpts.schema
 
 Domain.plugin(basePlugin)
 
 Domain.pre 'save', (next) ->
+  if !@isNew
+    if @isModified('dkimSelector') || @isModified('dkimPrivateKey')
+      @timeDkimLastUpdated = helpers.time()
+
   next()
 
 Domain.methods.checkHealth = (opt = {}) ->
@@ -77,7 +71,6 @@ Domain.methods.checkHealth = (opt = {}) ->
 # POST /domains/:id/configureDkim
 Domain.methods.configureDkim = (opt = {}) ->
   try
-    # Populate the awsAccount field
     await @populate('awsAccount')
 
     if !@awsAccount
@@ -103,7 +96,6 @@ Domain.methods.configureDkim = (opt = {}) ->
 # POST /domains/:id/upsertDnsRecord
 Domain.methods.upsertDnsRecord = ({ record }) ->
   try
-    # Populate the awsAccount field
     await @populate('awsAccount')
 
     if !@awsAccount
@@ -115,23 +107,74 @@ Domain.methods.upsertDnsRecord = ({ record }) ->
     catch error
       throw new Error("Error upserting DNS record: #{error.message}")
 
+# POST /domains/:id/pointToWebsite
+Domain.methods.pointToWebsite = ({ ipAddress }) ->
+  try
+    await @populate('awsAccount')
+
+    if !@awsAccount
+      throw new Error("AWS Account not found")
+
+    # create root A record
+    rootRecord = {
+      name: @domain
+      type: 'A'
+      ttl: 300
+      value: ipAddress
+    }
+
+    # create www A record
+    wwwRecord = {
+      name: "www.#{@domain}"
+      type: 'A'
+      ttl: 300
+      value: ipAddress
+    }
+
+    try
+      # upsert both records
+      await @awsAccount.upsertDnsRecord({ domain: @domain, record: rootRecord })
+      await @awsAccount.upsertDnsRecord({ domain: @domain, record: wwwRecord })
+
+      return {
+        success: true
+        message: "Domain pointed to website successfully"
+      }
+    catch error
+      throw new Error("Error pointing domain to website: #{error.message}")
+
 # GET /domains/:id/queryDnsRecords
 Domain.methods.queryDnsRecords = (opt = {}) ->
   try
-    dns = require 'dns'
-    { promisify } = require 'util'
+    await @populate('awsAccount')
 
-    resolveAny = promisify(dns.resolveAny)
-    records = await resolveAny(@domain)
+    if !@awsAccount
+      throw new Error("AWS Account not found")
 
-    formattedRecords = records.map (record) ->
+    # initialize route 53 client
+    @awsAccount._configureAWS()
+    route53 = new AWS.Route53()
+
+    # get hosted zone id for the domain
+    listHostedZonesResponse = await route53.listHostedZonesByName({ DNSName: @domain }).promise()
+    hostedZoneId = _.get(listHostedZonesResponse, 'HostedZones[0].Id')
+    
+    if !hostedZoneId
+      throw new Error "No hosted zone found for domain #{@domain}"
+
+    # get all records for the domain
+    existingRecords = await route53.listResourceRecordSets({ HostedZoneId: hostedZoneId }).promise()
+
+    # format records
+    records = existingRecords.ResourceRecordSets.map (record) ->
       {
-        type: record.type
-        value: record.address or record.exchange or record.value
-        ttl: record.ttl
+        name: record.Name
+        type: record.Type
+        ttl: record.TTL
+        value: record.ResourceRecords?[0]?.Value
       }
 
-    return formattedRecords
+    return records
   catch error
     throw new Error "Failed to query DNS records: #{error.message}"
 
