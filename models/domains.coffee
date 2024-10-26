@@ -7,8 +7,9 @@
 Schema = mongoose.Schema
 { basePlugin, EXPOSE } = require './../lib/models'
 
-_ = require 'lodash'
+helpers = require './../lib/helpers'
 
+_ = require 'lodash'
 AWS = require 'aws-sdk'
 
 modelOpts = {
@@ -49,9 +50,12 @@ Domain = new Schema {
   dkimPrivateKey: { type: String, default: null }
   timeDkimLastUpdated: { type: Number, default: 0 }
 
+  dnsRecords: { type: Array, default: [] }
+  timeDnsRecordsLastUpdated: { type: Number, default: 0 }
+
   # health properties
   isHealthy: { type: Boolean, default: false }
-  timeLastChecked: { type: Number, default: 0 }
+  timeHealthChecked: { type: Number, default: 0 }
 
 }, modelOpts.schema
 
@@ -62,14 +66,18 @@ Domain.pre 'save', (next) ->
     if @isModified('dkimSelector') || @isModified('dkimPrivateKey')
       @timeDkimLastUpdated = helpers.time()
 
+    if @isModified('dnsRecords')
+      @timeDnsRecordsLastUpdated = helpers.time()
+
   next()
 
 Domain.methods.checkHealth = (opt = {}) ->
   return next new Error 'Unimplemented'
 
-# @note: this will create a DKIM and SPF record for the domain
+# @note: this will create a DKIM and SPF records for the domain
 # POST /domains/:id/configureDkim
-Domain.methods.configureDkim = (opt = {}) ->
+# POST /domains/:id/updateDkim
+Domain.methods.configureDkim = Domain.methods.updateDkim =(opt = {}) ->
   try
     await @populate('awsAccount')
 
@@ -143,8 +151,8 @@ Domain.methods.pointToWebsite = ({ ipAddress }) ->
     catch error
       throw new Error("Error pointing domain to website: #{error.message}")
 
-# GET /domains/:id/queryDnsRecords
-Domain.methods.queryDnsRecords = (opt = {}) ->
+# POST /domains/:id/updateDnsRecords
+Domain.methods.updateDnsRecords = (opt = {}) ->
   try
     await @populate('awsAccount')
 
@@ -173,6 +181,11 @@ Domain.methods.queryDnsRecords = (opt = {}) ->
         ttl: record.TTL
         value: record.ResourceRecords?[0]?.Value
       }
+
+    @dnsRecords = records
+    @markModified('dnsRecords')
+
+    try await @save()
 
     return records
   catch error

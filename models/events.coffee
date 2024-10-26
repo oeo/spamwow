@@ -22,20 +22,10 @@ Event = new Schema {
     required: true
   }
 
-  email: {
-    type: String
-    ref: 'Email'
-  }
-
-  domain: {
-    type: String
-    ref: 'Domain'
-  }
-
-  campaign: {
-    type: String
-    ref: 'Campaign'
-  }
+  awsAccount: { type: String, ref: 'AwsAccount' }
+  email: { type: String, ref: 'Email' }
+  domain: { type: String, ref: 'Domain' }
+  campaign: { type: String, ref: 'Campaign' }
 
 }, modelOpts.schema
 

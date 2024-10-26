@@ -96,15 +96,9 @@ AwsAccount = new Schema {
     default: 'us-east-1'
   }
 
-  isValid: {
-    type: Boolean
-    default: false
-  }
-
-  timeLastChecked: {
-    type: Number
-    default: 0
-  }
+  # health properties
+  isHealthy: { type: Boolean, default: false }
+  timeHealthChecked: { type: Number, default: 0 }
 
 }, modelOpts.schema
 
@@ -127,7 +121,7 @@ AwsAccount.pre 'save', (next) ->
       
       @AWS_ACCOUNT_ID = +data.Account
 
-      @isValid = true
+      @isHealthy = true
       @timeLastChecked = helpers.time() 
 
       try
@@ -142,12 +136,12 @@ AwsAccount.pre 'save', (next) ->
       return next()
 
     catch error
-      next(new Error("Error validating AWS credentials: #{error.message}"))
+      return next(new Error("Error validating AWS credentials: #{error.message}"))
 
   next()
 
-# POST /awsaccounts/:_id/testValidity
-AwsAccount.methods.testValidity = (opt = {}) ->
+# POST /awsaccounts/:_id/checkHealth
+AwsAccount.methods.checkHealth = (opt = {}) ->
   @_configureAWS()
 
   try
@@ -158,14 +152,14 @@ AwsAccount.methods.testValidity = (opt = {}) ->
     now = helpers.time()
 
     if +data?.Account != @AWS_ACCOUNT_ID
-      @isValid = false
-      @timeLastChecked = now 
+      @isHealthy = false
+      @timeHealthChecked = now 
       try await @save()
 
       throw new Error "AWS credentials are invalid"
   
-    @isValid = true
-    @timeLastChecked = now
+    @isHealthy = true
+    @timeHealthChecked = now
 
     try await @save()
 
@@ -292,7 +286,6 @@ AwsAccount.methods.configureDkim = ({ domain, spfInclude = [] }) ->
         throw new Error "Domain #{domain} is not in this AWS account"
       throw error
 
-    # initialize route 53 client
     route53 = new AWS.Route53()
 
     # get hosted zone id for the domain
@@ -382,6 +375,7 @@ AwsAccount.methods.configureDkim = ({ domain, spfInclude = [] }) ->
     
     for include in allIncludes
       includeStr = "include:#{include}"
+
       # account for spaces and quotes in final string
       if currentLength + includeStr.length + 10 > 250
         spfChunks.push currentChunk
