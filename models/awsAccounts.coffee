@@ -104,7 +104,7 @@ AwsAccount = new Schema {
 
 AwsAccount.plugin(basePlugin)
 
-AwsAccount.methods._configureAWS = -> 
+AwsAccount.methods._configureAWS = ->
   AWS.config.update {
     accessKeyId: @AWS_ACCESS_KEY_ID,
     secretAccessKey: @AWS_SECRET_ACCESS_KEY,
@@ -118,11 +118,11 @@ AwsAccount.pre 'save', (next) ->
     try
       sts = new AWS.STS()
       data = await sts.getCallerIdentity().promise()
-      
+
       @AWS_ACCOUNT_ID = +data.Account
 
       @isHealthy = true
-      @timeLastChecked = helpers.time() 
+      @timeLastChecked = helpers.time()
 
       try
         L "Syncing domains for new AWS account"
@@ -153,17 +153,17 @@ AwsAccount.methods.checkHealth = (opt = {}) ->
 
     if +data?.Account != @AWS_ACCOUNT_ID
       @isHealthy = false
-      @timeHealthChecked = now 
+      @timeHealthChecked = now
       try await @save()
 
       throw new Error "AWS credentials are invalid"
-  
+
     @isHealthy = true
     @timeHealthChecked = now
 
     try await @save()
 
-    return true 
+    return true
 
   catch error
     throw new Error("Error validating AWS credentials: #{error.message}")
@@ -178,7 +178,7 @@ AwsAccount.methods.purchaseDomain = ({ domain }) ->
 
     params = {
       DomainName: domain
-      AutoRenew: false 
+      AutoRenew: false
       DurationInYears: 1
     }
 
@@ -244,13 +244,13 @@ AwsAccount.methods.syncDomains = (opt = {}) ->
 
     for domain in result.Domains
       existingDomain = await Domain.findOne({ domain: domain.DomainName })
-      
+
       if !existingDomain
         newDomain = new Domain({
           awsAccount: @_id
           domain: domain.DomainName
         })
-        
+
         try
           await newDomain.save()
           L "Added new domain: #{domain.DomainName}"
@@ -291,7 +291,7 @@ AwsAccount.methods.configureDkim = ({ domain, spfInclude = [] }) ->
     # get hosted zone id for the domain
     listHostedZonesResponse = await route53.listHostedZonesByName({ DNSName: domain }).promise()
     hostedZoneId = _.get(listHostedZonesResponse, 'HostedZones[0].Id')
-    
+
     if !hostedZoneId
       throw new Error "No hosted zone found for domain #{domain}"
 
@@ -299,10 +299,10 @@ AwsAccount.methods.configureDkim = ({ domain, spfInclude = [] }) ->
     existingRecords = await route53.listResourceRecordSets({ HostedZoneId: hostedZoneId }).promise()
 
     changesToDelete = _.chain(existingRecords.ResourceRecordSets)
-      .filter((record) -> 
+      .filter((record) ->
         record.Type in ['TXT', 'CNAME'] and (_.includes(record.Name, '_domainkey') or record.Name is "#{domain}.")
       )
-      .map((record) -> 
+      .map((record) ->
         {
           Action: 'DELETE'
           ResourceRecordSet: record
@@ -338,15 +338,15 @@ AwsAccount.methods.configureDkim = ({ domain, spfInclude = [] }) ->
       .replace(/-----END PUBLIC KEY-----/, '')
       .replace(/\s+/g, '')
       .value()
-    
+
     # split the dkim record into chunks of 250 characters
     stringToRoute53Safe = (string) ->
       splitString = (string[i..(i + 249)] for i in [0...string.length] by 250)
       splitString.map((v) -> "\"#{v}\"").join(' ')
-    
+
     dkimValue = "v=DKIM1; k=rsa; p=#{dkimRecord}"
     dkimSafeValue = stringToRoute53Safe(dkimValue)
-    
+
     dkimChanges = [
       {
         Action: 'UPSERT'
@@ -365,14 +365,14 @@ AwsAccount.methods.configureDkim = ({ domain, spfInclude = [] }) ->
       'spf.protection.outlook.com'     # microsoft 365
       'mailgun.org'                    # mailgun
     ]
-    
+
     allIncludes = _.uniq([...defaultIncludes, ...spfInclude])
-    
+
     # split spf includes into chunks to avoid route53 length limits
     spfChunks = []
     currentChunk = []
     currentLength = 0
-    
+
     for include in allIncludes
       includeStr = "include:#{include}"
 
@@ -381,14 +381,14 @@ AwsAccount.methods.configureDkim = ({ domain, spfInclude = [] }) ->
         spfChunks.push currentChunk
         currentChunk = []
         currentLength = 0
-      
+
       currentChunk.push includeStr
       currentLength += includeStr.length + 1
-    
+
     spfChunks.push currentChunk if currentChunk.length
-    
+
     # create spf value with mechanism chunks
-    spfValue = spfChunks.map((chunk) -> 
+    spfValue = spfChunks.map((chunk) ->
       "v=spf1 #{chunk.join(' ')} ~all"
     ).join('')
 
@@ -466,3 +466,4 @@ AwsAccount.methods.upsertDnsRecord = ({ domain, record }) ->
 ##
 model = mongoose.model modelOpts.name, AwsAccount
 module.exports = EXPOSE(model)
+

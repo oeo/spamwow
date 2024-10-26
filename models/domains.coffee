@@ -29,7 +29,7 @@ Domain = new Schema {
     required: true
   }
 
-  # ourwebsite.com 
+  # ourwebsite.com
   domain: {
     type: String
     required: true
@@ -38,7 +38,7 @@ Domain = new Schema {
     trim: true
   }
 
-  # mirroredwebsite.com 
+  # mirroredwebsite.com
   mirrorHost: {
     type: String
     lowercase: true
@@ -85,12 +85,12 @@ Domain.methods.configureDkim = Domain.methods.updateDkim =(opt = {}) ->
       throw new Error("AWS Account not found")
 
     result = await @awsAccount.configureDkim({ domain: @domain })
-    
+
     if result.success
       @dkimSelector = result.dkimSelector
       @dkimPrivateKey = result.dkimPrivateKey
       await @save()
-      
+
       return {
         success: true,
         message: "DKIM and SPF configured successfully",
@@ -166,7 +166,7 @@ Domain.methods.updateDnsRecords = (opt = {}) ->
     # get hosted zone id for the domain
     listHostedZonesResponse = await route53.listHostedZonesByName({ DNSName: @domain }).promise()
     hostedZoneId = _.get(listHostedZonesResponse, 'HostedZones[0].Id')
-    
+
     if !hostedZoneId
       throw new Error "No hosted zone found for domain #{@domain}"
 
