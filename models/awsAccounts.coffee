@@ -90,14 +90,6 @@ AwsAccount = new Schema {
 
 AwsAccount.plugin(basePlugin)
 
-###
-AwsAccount.methods._decrypt = (opt = {}) ->
-  plainObj = @toObject()
-  plainObj.AWS_ACCESS_KEY_ID = decrypt(@AWS_ACCESS_KEY_ID)
-  plainObj.AWS_SECRET_ACCESS_KEY = decrypt(@AWS_SECRET_ACCESS_KEY)
-  plainObj
-###
-
 # POST /awsaccounts/:_id/test
 AwsAccount.methods.test = (opt = {}) ->
   throw new Error 'AwsAccount.test not implemented'
