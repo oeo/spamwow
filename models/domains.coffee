@@ -73,7 +73,7 @@ Domain.pre 'save', (next) ->
 Domain.methods.checkHealth = (opt = {}) ->
   return next new Error 'Unimplemented'
 
-# @note calls @awsAccount.configureDkim { @domain }
+# @note: this will create a DKIM and SPF record for the domain
 # POST /domains/:id/configureDkim
 Domain.methods.configureDkim = (opt = {}) ->
   try
@@ -100,7 +100,6 @@ Domain.methods.configureDkim = (opt = {}) ->
   catch error
     throw new Error("Error configuring DKIM and SPF: #{error.message}")
 
-# @note calls @awsAccount.upsertDnsRecord { @domain, record }
 # POST /domains/:id/upsertDnsRecord
 Domain.methods.upsertDnsRecord = ({ record }) ->
   try

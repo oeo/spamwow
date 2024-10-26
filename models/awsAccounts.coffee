@@ -118,6 +118,7 @@ AwsAccount.methods.configureAWS = ->
     region: @AWS_REGION
   }
 
+
 AwsAccount.pre 'save', (next) ->
   @configureAWS()
 
@@ -130,6 +131,14 @@ AwsAccount.pre 'save', (next) ->
 
       @isValid = true
       @timeLastChecked = helpers.time() 
+
+      try
+        L "Syncing domains for new AWS account"
+        await @syncDomains()
+      catch error
+        # we don't want to prevent the account from being created if syncing fails
+        # so we'll just log the error and continue
+        L.error("Error syncing domains for new AWS account:", error)
 
       # credentials are valid
       return next()
@@ -181,7 +190,6 @@ AwsAccount.methods.purchaseDomain = ({ domain }) ->
       DurationInYears: 1
     }
 
-    L "Purchasing domain: #{domain}"
     result = await route53Domains.registerDomain(params).promise()
 
     # validate that the domain was actually registered
@@ -232,6 +240,8 @@ AwsAccount.methods.listDomains = (opt = {}) ->
     L.error "Failed to list domains: #{error.message}"
     throw new Error "Failed to list domains: #{error.message}"
 
+# @note: this will create an entry in the domains collection
+# for each domain that is registered in this AWS account
 # POST /awsaccounts/:_id/syncDomains
 AwsAccount.methods.syncDomains = (opt = {}) ->
   @configureAWS()
@@ -262,7 +272,7 @@ AwsAccount.methods.syncDomains = (opt = {}) ->
     L.error "Failed to sync domains: #{error.message}"
     throw new Error "Failed to sync domains: #{error.message}"
 
-
+# @note: this will create a DKIM and SPF record for the domain
 # POST /awsaccounts/:_id/configureDkim
 AwsAccount.methods.configureDkim = ({ domain }) ->
   @configureAWS()
@@ -293,7 +303,7 @@ AwsAccount.methods.configureDkim = ({ domain }) ->
 
     changesToDelete = _.chain(existingRecords.ResourceRecordSets)
       .filter((record) -> 
-        record.Type in ['TXT', 'CNAME'] && (_.includes(record.Name, '_domainkey') || _.includes(record.Name, 'spf'))
+        record.Type in ['TXT', 'CNAME'] and (_.includes(record.Name, '_domainkey') or _.includes(record.Name, 'spf'))
       )
       .map((record) -> 
         {
@@ -374,6 +384,7 @@ AwsAccount.methods.configureDkim = ({ domain }) ->
     L.error "Failed to configure DKIM: #{error.message}"
     throw new Error "Failed to configure DKIM: #{error.message}"
 
+# @note: this will create a DNS record for a domain
 # POST /awsaccounts/:_id/upsertDnsRecord
 AwsAccount.methods.upsertDnsRecord = ({ domain, record }) ->
   @configureAWS()
