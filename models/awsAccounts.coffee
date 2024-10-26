@@ -7,15 +7,19 @@
 Schema = mongoose.Schema
 { basePlugin, EXPOSE } = require './../lib/models'
 
+{ encrypt, decrypt } = require './../lib/crypto'
+
 modelOpts = {
-  name: 'AWSAccount'
+  name: 'AwsAccount'
   schema: {
     collection: 'awsaccounts'
     strict: false
   }
 }
 
-AWSAccount = new Schema {
+AwsAccount = new Schema {
+
+  active: { type: Boolean, default: true }
 
   name: {
     type: String
@@ -26,13 +30,15 @@ AWSAccount = new Schema {
   AWS_ACCESS_KEY_ID: {
     type: String
     required: true
-    trim: true
+    set: encrypt
+    get: decrypt
   }
 
   AWS_SECRET_ACCESS_KEY: {
     type: String
     required: true
-    trim: true
+    set: encrypt
+    get: decrypt
   }
 
   AWS_REGION: {
@@ -82,12 +88,20 @@ AWSAccount = new Schema {
 
 }, modelOpts.schema
 
-AWSAccount.plugin(basePlugin)
+AwsAccount.plugin(basePlugin)
+
+###
+AwsAccount.methods._decrypt = (opt = {}) ->
+  plainObj = @toObject()
+  plainObj.AWS_ACCESS_KEY_ID = decrypt(@AWS_ACCESS_KEY_ID)
+  plainObj.AWS_SECRET_ACCESS_KEY = decrypt(@AWS_SECRET_ACCESS_KEY)
+  plainObj
+###
 
 # POST /awsaccounts/:_id/test
-AWSAccount.methods.test = (opt = {}) ->
-  throw new Error 'AWSAccount.test not implemented'
+AwsAccount.methods.test = (opt = {}) ->
+  throw new Error 'AwsAccount.test not implemented'
 
-model = mongoose.model modelOpts.name, AWSAccount
+model = mongoose.model modelOpts.name, AwsAccount
 module.exports = EXPOSE(model)
 

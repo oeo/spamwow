@@ -17,6 +17,8 @@ modelOpts = {
 
 Domain = new Schema {
 
+  active: { type: Boolean, default: true }
+
   # our-domain-name.com
   domain: {
     type: String

@@ -12,7 +12,7 @@ Schema = mongoose.Schema
 helpers = require './../lib/helpers'
 
 modelOpts = {
-  name: 'EmailDNS'
+  name: 'EmailDns'
   schema: {
     collection: 'emaildns'
     strict: false
@@ -55,8 +55,8 @@ getMXRecords = (domain) ->
     console.error("Error resolving MX for #{domain}:", error)
     []
 
-# Model definition
-EmailDNS = new Schema {
+EmailDns = new Schema {
+
   domain: {
     type: String
     required: true
@@ -105,12 +105,12 @@ EmailDNS = new Schema {
 
 }, modelOpts.schema
 
-EmailDNS.plugin(basePlugin)
+EmailDns.plugin(basePlugin)
 
 # Static methods
 EMAIL_BITMAP_KEY = 'email:checked'
 
-EmailDNS.statics.verifyDomain = ({ email }) ->
+EmailDns.statics.verifyDomain = ({ email }) ->
   [, domain] = email.split('@')
 
   # Check if email has been checked before
@@ -148,22 +148,22 @@ EmailDNS.statics.verifyDomain = ({ email }) ->
   await newEmailDns.save()
   newEmailDns
 
-EmailDNS.statics.getTop = ({ limit = 50 } = {}) ->
+EmailDns.statics.getTop = ({ limit = 50 } = {}) ->
   @find({ isValid: true })
     .sort({ frequency: -1 })
     .limit(limit)
     .lean()
 
-EmailDNS.statics.getDomainStats = ({ domain }) ->
+EmailDns.statics.getDomainStats = ({ domain }) ->
   @findOne({ domain })
 
-EmailDNS.statics.batchVerify = ({ emails }) ->
+EmailDns.statics.batchVerify = ({ emails }) ->
   results = []
   for email in emails
     result = await @verifyDomain({ email })
     results.push(result)
   results
 
-model = mongoose.model modelOpts.name, EmailDNS
+model = mongoose.model modelOpts.name, EmailDns
 module.exports = EXPOSE(model)
 

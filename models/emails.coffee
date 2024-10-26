@@ -55,7 +55,7 @@ Email = new Schema {
     index: true
   }
 
-  domain: {
+  emailDomain: {
     type: String
     required: true
     lowercase: true
@@ -118,7 +118,7 @@ Email.pre 'save', (next) ->
   if @isModified('email')
     try
       @email = @constructor._sanitize(@email)
-      @domain = @email.split('@')[1]
+      @emailDomain = @email.split('@')[1]
       @md5 = require('crypto').createHash('md5').update(@email).digest('hex')
     catch e
       return next(e)
