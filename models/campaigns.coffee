@@ -81,10 +81,10 @@ Campaign = new Schema {
     type: String
     enum: [
       'draft'      # initial state
-      'queued'     # queue built, ready to send
+      'queued'     # queue built (ready to send)
       'sending'    # actively sending
+      'stopped'    # manually stopped 
       'completed'  # finished sending
-      'stopped'    # manually stopped
       'failed'     # error occurred
     ]
     default: 'draft'
@@ -129,7 +129,6 @@ Campaign = new Schema {
 
 Campaign.plugin(basePlugin)
 
-# hooks
 Campaign.pre 'save', (next) ->
   if @isModified('dailyRateLimit')
     # if daily rate is 0 (unlimited), hourly rate is also 0
