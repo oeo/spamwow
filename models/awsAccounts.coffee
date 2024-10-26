@@ -111,7 +111,7 @@ AwsAccount = new Schema {
 
 AwsAccount.plugin(basePlugin)
 
-AwsAccount.methods.configureAWS = -> 
+AwsAccount.methods._configureAWS = -> 
   AWS.config.update {
     accessKeyId: @AWS_ACCESS_KEY_ID,
     secretAccessKey: @AWS_SECRET_ACCESS_KEY,
@@ -120,7 +120,7 @@ AwsAccount.methods.configureAWS = ->
 
 
 AwsAccount.pre 'save', (next) ->
-  @configureAWS()
+  @_configureAWS()
 
   if @isNew
     try
@@ -150,7 +150,7 @@ AwsAccount.pre 'save', (next) ->
 
 # POST /awsaccounts/:_id/testValidity
 AwsAccount.methods.testValidity = (opt = {}) ->
-  @configureAWS()
+  @_configureAWS()
 
   try
     sts = new AWS.STS()
@@ -179,7 +179,7 @@ AwsAccount.methods.testValidity = (opt = {}) ->
 # @note: this will eventually create an entry in the domains collection
 # POST /awsaccounts/:_id/purchaseDomain
 AwsAccount.methods.purchaseDomain = ({ domain }) ->
-  @configureAWS()
+  @_configureAWS()
 
   try
     route53Domains = new AWS.Route53Domains()
@@ -221,7 +221,7 @@ AwsAccount.methods.purchaseDomain = ({ domain }) ->
 
 # POST /awsaccounts/:_id/listDomains
 AwsAccount.methods.listDomains = (opt = {}) ->
-  @configureAWS()
+  @_configureAWS()
 
   try
     route53Domains = new AWS.Route53Domains()
@@ -244,7 +244,7 @@ AwsAccount.methods.listDomains = (opt = {}) ->
 # for each domain that is registered in this AWS account
 # POST /awsaccounts/:_id/syncDomains
 AwsAccount.methods.syncDomains = (opt = {}) ->
-  @configureAWS()
+  @_configureAWS()
 
   try
     route53Domains = new AWS.Route53Domains()
@@ -275,7 +275,7 @@ AwsAccount.methods.syncDomains = (opt = {}) ->
 # @note: this will create a DKIM and SPF record for the domain
 # POST /awsaccounts/:_id/configureDkim
 AwsAccount.methods.configureDkim = ({ domain }) ->
-  @configureAWS()
+  @_configureAWS()
 
   try
     # verify domain is in this AWS account
@@ -387,7 +387,7 @@ AwsAccount.methods.configureDkim = ({ domain }) ->
 # @note: this will create a DNS record for a domain
 # POST /awsaccounts/:_id/upsertDnsRecord
 AwsAccount.methods.upsertDnsRecord = ({ domain, record }) ->
-  @configureAWS()
+  @_configureAWS()
 
   try
     route53 = new AWS.Route53()
