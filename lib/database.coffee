@@ -8,6 +8,30 @@ _ = require 'lodash'
 mongoose = require 'mongoose'
 IORedis = require 'ioredis'
 
+Trk2 = require 'trk2'
+
+trk2 = new Trk2 {
+  redis,
+  prefix: 'trk2'
+  map: {
+    bmp: [
+      'ip'
+      'email'
+    ]
+    add: [
+      'event'
+      'event~awsaccount'
+      'event~campaign'
+    ]
+    addv: [
+      
+    ]
+    top: [
+
+    ]
+  }
+} 
+
 connections = {
   redis: 0
   mongo: 0
