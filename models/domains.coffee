@@ -57,6 +57,12 @@ Domain = new Schema {
   isHealthy: { type: Boolean, default: false }
   timeHealthChecked: { type: Number, default: 0 }
 
+  # workmail properties
+  workmailOrganizationId: { type: String, default: null }
+  workmailDomainId: { type: String, default: null }
+  isWorkmailEnabled: { type: Boolean, default: false }
+  timeWorkmailLastUpdated: { type: Number, default: 0 }
+
 }, modelOpts.schema
 
 Domain.plugin(basePlugin)
@@ -68,6 +74,9 @@ Domain.pre 'save', (next) ->
 
     if @isModified('dnsRecords')
       @timeDnsRecordsLastUpdated = helpers.time()
+
+    if @isModified('workmailOrganizationId') || @isModified('workmailDomainId') || @isModified('isWorkmailEnabled')
+      @timeWorkmailLastUpdated = helpers.time()
 
   next()
 
@@ -190,6 +199,11 @@ Domain.methods.updateDnsRecords = (opt = {}) ->
     return records
   catch error
     throw new Error "Failed to query DNS records: #{error.message}"
+
+# POST /domains/:id/configureIncomingEmail
+Domain.methods.configureIncomingEmail = (opt = {}) ->
+  throw new Error "Unimplemented"
+
 
 model = mongoose.model modelOpts.name, Domain
 module.exports = EXPOSE(model)

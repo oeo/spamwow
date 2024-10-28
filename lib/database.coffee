@@ -10,28 +10,6 @@ IORedis = require 'ioredis'
 
 Trk2 = require 'trk2'
 
-trk2 = new Trk2 {
-  redis,
-  prefix: 'trk2'
-  map: {
-    bmp: [
-      'ip'
-      'email'
-    ]
-    add: [
-      'event'
-      'event~awsaccount'
-      'event~campaign'
-    ]
-    addv: [
-      
-    ]
-    top: [
-
-    ]
-  }
-} 
-
 connections = {
   redis: 0
   mongo: 0
@@ -52,6 +30,28 @@ redis = new IORedis env.REDIS_URI
   .on 'connect', ->
     connections.redis = true
     L 'connected to redis'
+
+trk2 = new Trk2 {
+  redis,
+  prefix: 'trk2'
+  map: {
+    bmp: [
+      'ip'
+      'email'
+    ]
+    add: [
+      'event'
+      'event~awsaccount'
+      'event~campaign'
+    ]
+    addv: [
+      
+    ]
+    top: [
+
+    ]
+  }
+}
 
 # ready promise
 connected = ready = ->
