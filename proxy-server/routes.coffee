@@ -2,6 +2,8 @@
 # vim: set expandtab tabstop=2 shiftwidth=2 softtabstop=2
 express = require('express')
 
+{ encrypt, decrypt } = require('./lib/crypto')
+
 module.exports = (site, config) ->
   router = express.Router()
 
