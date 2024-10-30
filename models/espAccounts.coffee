@@ -38,9 +38,6 @@ EspAccount = new Schema {
     enum: [
       'amazon-ses'
       'sendgrid'
-      'mailgun'
-      'postmark'
-      'mandrill'
     ]
   }
 
@@ -76,31 +73,6 @@ EspAccount = new Schema {
 
   # sendgrid specific fields
   SENDGRID_API_KEY: {
-    type: String
-    set: encrypt
-    get: decrypt
-  }
-
-  # mailgun specific fields
-  MAILGUN_API_KEY: {
-    type: String
-    set: encrypt
-    get: decrypt
-  }
-
-  MAILGUN_DOMAIN: {
-    type: String
-  }
-
-  # postmark specific fields
-  POSTMARK_API_KEY: {
-    type: String
-    set: encrypt
-    get: decrypt
-  }
-
-  # mandrill specific fields
-  MANDRILL_API_KEY: {
     type: String
     set: encrypt
     get: decrypt
