@@ -20,16 +20,52 @@ modelOpts = {
   }
 }
 
+StringReplacementSchema = new Schema({
+  from: String
+  to: String
+}, { _id: false })
+
+ProxyConfigSchema = new Schema({
+  originalHost: {
+    type: String
+    required: true
+    trim: true
+  }
+  newHost: {
+    type: String
+    required: true
+    trim: true
+  }
+  port: {
+    type: Number
+    required: true
+  }
+  additionalDomains: {
+    type: [String]
+    default: []
+  }
+  trackingScripts: {
+    type: [String]
+    default: []
+  }
+  injectScript: {
+    type: String
+    default: ''
+  }
+  stringReplacements: {
+    type: [StringReplacementSchema]
+    default: []
+  }
+}, { _id: false })
+
 Domain = new Schema {
 
-  # aws account managing this domain
   awsAccount: {
     type: String
     ref: 'AwsAccount'
     required: true
   }
 
-  # ourwebsite.com
   domain: {
     type: String
     required: true
@@ -38,12 +74,14 @@ Domain = new Schema {
     trim: true
   }
 
-  # mirroredwebsite.com
-  mirrorHost: {
-    type: String
-    lowercase: true
-    trim: true
+  # proxy mirror config 
+  proxyConfig: {
+    type: ProxyConfigSchema,
+    default: () -> ({})
   }
+
+  isProxyHealthy: { type: Boolean, default: false }
+  timeProxyLastChecked: { type: Number, default: 0 }
 
   # dkim properties
   dkimSelector: { type: String, default: null }
@@ -57,12 +95,6 @@ Domain = new Schema {
   isHealthy: { type: Boolean, default: false }
   timeHealthChecked: { type: Number, default: 0 }
 
-  # workmail properties
-  workmailOrganizationId: { type: String, default: null }
-  workmailDomainId: { type: String, default: null }
-  isWorkmailEnabled: { type: Boolean, default: false }
-  timeWorkmailLastUpdated: { type: Number, default: 0 }
-
 }, modelOpts.schema
 
 Domain.plugin(basePlugin)
@@ -74,9 +106,6 @@ Domain.pre 'save', (next) ->
 
     if @isModified('dnsRecords')
       @timeDnsRecordsLastUpdated = helpers.time()
-
-    if @isModified('workmailOrganizationId') || @isModified('workmailDomainId') || @isModified('isWorkmailEnabled')
-      @timeWorkmailLastUpdated = helpers.time()
 
   next()
 
@@ -204,6 +233,22 @@ Domain.methods.updateDnsRecords = (opt = {}) ->
 Domain.methods.configureIncomingEmail = (opt = {}) ->
   throw new Error "Unimplemented"
 
+Domain.methods.updateProxyConfig = ({ opt }) ->
+  @proxyConfig = {
+    originalHost: opt.originalHost
+    newHost: @domain
+    port: opt.port
+    additionalDomains: opt.additionalDomains ? []
+    trackingScripts: opt.trackingScripts ? []
+    injectScript: opt.injectScript ? ''
+    stringReplacements: opt.stringReplacements ? []
+  }
+
+  @markModified('proxyConfig')
+  return @save()
+
+Domain.methods.checkProxyHealth = (opt = {}) ->
+  return next new Error 'Unimplemented'
 
 model = mongoose.model modelOpts.name, Domain
 module.exports = EXPOSE(model)

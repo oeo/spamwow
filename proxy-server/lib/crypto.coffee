@@ -23,7 +23,7 @@ fromUrlSafe = (str) ->
 
 encrypt = (message, secret = false) ->
   if !secret or typeof secret isnt 'string'
-    secret = env.GLOBAL_SALT ? 'salt'
+    secret = env.GLOBAL_SALT ? 'global-salt'
 
   unless typeof message is 'string'
     try
@@ -43,7 +43,7 @@ encrypt = (message, secret = false) ->
 
 decrypt = (ciphertext, secret = false) ->
   if !secret or typeof secret isnt 'string'
-    secret = env.GLOBAL_SALT ? 'salt'
+    secret = env.GLOBAL_SALT ? 'global-salt'
 
   try
     secret = secret.toString()
