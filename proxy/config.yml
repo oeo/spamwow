@@ -1,0 +1,57 @@
+settings:
+  log_dir: "./logs"
+  log_size_limit: 10485760  # 10MB in bytes
+  request_timeout: 5000     # 5 seconds in ms
+  rate_limit:
+    capacity: 10
+    fill_rate: 5
+  redis:
+    host: "localhost"
+    port: 6379
+    db: 0
+sites:
+  - original_host: "blackmoonlilith.art.blog"
+    new_host: "localhost"
+    port: 9991
+    additional_domains:
+      - "wordpress.com"
+      - "wp.com"
+      - "s0.wp.com"
+      - "s1.wp.com"
+      - "s2.wp.com"
+      - "s3.wp.com"
+      - "stats.wp.com"
+      - "pixel.wp.com"
+      - "gravatar.com"
+    tracking_scripts:
+      - "https?://www\\.google-analytics\\.com/analytics\\.js"
+      - "https?://ssl\\.google-analytics\\.com/ga\\.js"
+      - "https?://www\\.googletagmanager\\.com/gtm\\.js"
+      - "https?://stats\\.wp\\.com/[^'\"]+\\.js"
+      - "https?://pixel\\.wp\\.com/[^'\"]+\\.gif"
+    inject_script: |
+      <script>
+        console.log('Proxy active');
+        document.getElementById('wpadminbar')?.remove();
+      </script>
+    string_replacements:
+      - from: "Black Moon Lilith"
+        to: "Blood Moon Lilith"
+
+  - original_host: "example.com"
+    new_host: "localhost"
+    port: 9992
+    tracking_scripts:
+      - "https?://www\\.google-analytics\\.com/analytics\\.js"
+      - "https?://ssl\\.google-analytics\\.com/ga\\.js"
+      - "https?://www\\.googletagmanager\\.com/gtm\\.js"
+      - "https?://stats\\.wp\\.com/[^'\"]+\\.js"
+      - "https?://pixel\\.wp\\.com/[^'\"]+\\.gif"
+    inject_script: |
+      <script>
+        console.log('Proxy active');
+        document.getElementById('wpadminbar')?.remove();
+      </script>
+    string_replacements:
+      - from: "Example Domain"
+        to: "Proxied Domain"
