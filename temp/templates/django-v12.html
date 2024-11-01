@@ -1,0 +1,512 @@
+<!-- vim: set expandtab tabstop=2 shiftwidth=2 softtabstop=2 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #447e9b;
+            --secondary-color: #79aec8;
+            --accent-color: #f5dd5d;
+            --text-color: #111111;
+            --background-color: #447e9b;
+            --success-color: #5cb85c;
+            --error-color: #d9534f;
+            --warning-color: #f0ad4e;
+            --info-color: #5bc0de;
+            --sidebar-color: #f0f0f0;
+            --font-primary: Arial, sans-serif;
+            --font-size-base: 14px;
+            --font-size-small: 12px;
+            --spacing-unit: 15px;
+        }
+
+        body, html {
+            font-family: var(--font-primary);
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-size: var(--font-size-base);
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--background-color);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: var(--sidebar-color);
+            color: var(--text-color);
+            padding: var(--spacing-unit);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 2px;
+        }
+
+        .sidebar a {
+            color: var(--text-color);
+            text-decoration: none;
+            display: block;
+            padding: 5px 8px;
+        }
+
+        .sidebar a:hover, .sidebar a:visited {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar ul ul {
+            margin-left: 15px;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: var(--spacing-unit);
+            overflow-y: auto;
+            background-color: white;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .button-success { background-color: var(--success-color); }
+        .button-error { background-color: var(--error-color); }
+        .button-warning { background-color: var(--warning-color); }
+        .button-info { background-color: var(--info-color); }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+
+        .col-1, .col-2, .col-3, .col-4, .col-5, .col-6,
+        .col-7, .col-8, .col-9, .col-10, .col-11, .col-12 {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 768px) {
+            .col-1 { flex: 0 0 8.333333%; max-width: 8.333333%; }
+            .col-2 { flex: 0 0 16.666667%; max-width: 16.666667%; }
+            .col-3 { flex: 0 0 25%; max-width: 25%; }
+            .col-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+            .col-5 { flex: 0 0 41.666667%; max-width: 41.666667%; }
+            .col-6 { flex: 0 0 50%; max-width: 50%; }
+            .col-7 { flex: 0 0 58.333333%; max-width: 58.333333%; }
+            .col-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
+            .col-9 { flex: 0 0 75%; max-width: 75%; }
+            .col-10 { flex: 0 0 83.333333%; max-width: 83.333333%; }
+            .col-11 { flex: 0 0 91.666667%; max-width: 91.666667%; }
+            .col-12 { flex: 0 0 100%; max-width: 100%; }
+        }
+
+        .hero-stat {
+            background-color: white;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+
+        .hero-stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .hero-stat-label {
+            font-size: var(--font-size-base);
+            color: #666;
+        }
+
+        .bordered-container {
+            background-color: white;
+            padding: var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+            border: 1px solid #ddd;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-unit);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .breadcrumbs {
+            margin-bottom: var(--spacing-unit);
+            font-size: var(--font-size-base);
+        }
+
+        .breadcrumbs a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .text-mono, .text-code, .text-code-like {
+            font-family: monospace;
+        }
+
+        .pagination {
+            margin-top: var(--spacing-unit);
+        }
+
+        .pagination a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin: 0 4px;
+        }
+
+        .pagination a.active {
+            text-decoration: underline;
+        }
+
+        /* Padding helpers */
+        .p-0 { padding: 0 !important; }
+        .p-1 { padding: 0.25rem !important; }
+        .p-2 { padding: 0.5rem !important; }
+        .p-3 { padding: 1rem !important; }
+        .p-4 { padding: 1.5rem !important; }
+
+        /* Margin helpers */
+        .m-0 { margin: 0 !important; }
+        .m-1 { margin: 0.25rem !important; }
+        .m-2 { margin: 0.5rem !important; }
+        .m-3 { margin: 1rem !important; }
+        .m-4 { margin: 1.5rem !important; }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            box-sizing: border-box;
+        }
+
+        .help-text {
+            display: block;
+            margin-top: 0.25rem;
+            font-size: var(--font-size-small);
+            color: #6c757d;
+        }
+
+        .alert {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .checkbox-group, .radio-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .checkbox-group label, .radio-group label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .checkbox-group input[type="checkbox"],
+        .radio-group input[type="radio"] {
+            margin-right: 0.5rem;
+        }
+
+        .global-search {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        a:hover, a:visited {
+            color: var(--primary-color);
+        }
+
+        a.active {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Admin</h2>
+            <nav>
+                <ul>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#users">Users</a></li>
+                    <li><a href="#posts">Posts</a></li>
+                    <li>
+                        <a href="#settings">Settings</a>
+                        <ul>
+                            <li><a href="#general">General</a></li>
+                            <li><a href="#security">Security</a></li>
+                            <li><a href="#advanced">Advanced</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <div class="main-content">
+            <input type="text" class="global-search" placeholder="Search (Ctrl + K)">
+
+            <div class="breadcrumbs">
+                <a href="#home">Home</a> &gt; <a href="#admin">Admin</a> &gt; Dashboard
+            </div>
+
+            <h1>Dashboard</h1>
+
+            <div class="row">
+                <div class="col-3">
+                    <div class="hero-stat">
+                        <div class="hero-stat-number">1,234</div>
+                        <div class="hero-stat-label">Daily Active Users</div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="hero-stat">
+                        <div class="hero-stat-number">5,678</div>
+                        <div class="hero-stat-label">Events Recorded</div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="hero-stat">
+                        <div class="hero-stat-number">90</div>
+                        <div class="hero-stat-label">New User Signups</div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="hero-stat">
+                        <div class="hero-stat-number">456</div>
+                        <div class="hero-stat-label">Users Online Now</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Alerts</h2>
+            <div class="alert alert-success">This is a success message.</div>
+            <div class="alert alert-error">This is an error message.</div>
+
+            <h2>Table</h2>
+            <div class="bordered-container">
+                <div class="table-header">
+                    <span>Total records: 2</span>
+                    <div>
+                        <button class="button">Add New</button>
+                        <button class="button">Export</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>John Doe</td>
+                            <td>john@example.com</td>
+                            <td>
+                                <a href="#edit">Edit</a>
+                                <a href="#delete">Delete</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Jane Smith</td>
+                            <td>jane@example.com</td>
+                            <td>
+                                <a href="#edit">Edit</a>
+                                <a href="#delete">Delete</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Form</h2>
+            <div class="bordered-container">
+                <div class="row">
+                    <div class="col-6">
+                        <form>
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username" required>
+                                <span class="help-text">Enter a unique username for the account.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" required>
+                                <span class="help-text">A valid email address is required.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" name="password" required>
+                                <span class="help-text">Must be at least 8 characters long.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="role">Role</label>
+                                <select id="role" name="role">
+                                    <option value="user">User</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="editor">Editor</option>
+                                </select>
+                                <span class="help-text">Select the user's role in the system.</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Gender</label>
+                                <div class="radio-group">
+                                    <label>
+                                        <input type="radio" name="gender" value="male"> Male
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="gender" value="female"> Female
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="gender" value="other"> Other
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="interests">Interests</label>
+                                <select id="interests" name="interests" multiple>
+                                    <option value="sports">Sports</option>
+                                    <option value="music">Music</option>
+                                    <option value="movies">Movies</option>
+                                    <option value="books">Books</option>
+                                    <option value="travel">Travel</option>
+                                </select>
+                                <span class="help-text">Select one or more interests (Ctrl+Click for multiple)</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="bio">Bio</label>
+                                <textarea id="bio" name="bio" rows="4"></textarea>
+                                <span class="help-text">A brief description about the user (optional).</span>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="active" name="active">
+                                    Active
+                                </label>
+                                <span class="help-text">Check if the user account should be active.</span>
+                            </div>
+                            <button type="submit" class="button">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Buttons</h2>
+            <button class="button">Primary</button>
+            <button class="button button-success">Success</button>
+            <button class="button button-error">Error</button>
+            <button class="button button-warning">Warning</button>
+            <button class="button button-info">Info</button>
+
+            <h2>Pagination</h2>
+            <div class="pagination text-mono">
+                <a href="#">1</a>
+                <a href="#" class="active">2</a>
+                <a href="#">3</a>
+                <a href="#">4</a>
+                <a href="#">5</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

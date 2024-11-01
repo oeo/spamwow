@@ -89,6 +89,7 @@ EspAccount = new Schema {
   # stats
   sentLast24h: { type: Number, default: 0 }
   sentLastHour: { type: Number, default: 0 }
+
   bounceRate: { type: Number, default: 0 }
   complaintRate: { type: Number, default: 0 }
 
@@ -117,11 +118,15 @@ EspAccount.pre 'save', (next) ->
         when 'sendgrid'
           # validate sendgrid key
           headers = Authorization: "Bearer #{@SENDGRID_API_KEY}"
-          response = await fetch 'https://api.sendgrid.com/v3/user/credits'
-            headers: headers
+          response = await fetch 'https://api.sendgrid.com/v3/user/credits', {
+            headers
+          }
+
           if !response.ok
             throw new Error 'Invalid SendGrid API key'
+
         # add other provider validations here
+        # ...
 
       @isHealthy = true
       @timeLastChecked = helpers.time()
@@ -145,11 +150,15 @@ EspAccount.methods.checkHealth = (opt = {}) ->
         await ses.getSendQuota().promise()
       when 'sendgrid'
         headers = Authorization: "Bearer #{@SENDGRID_API_KEY}"
-        response = await fetch 'https://api.sendgrid.com/v3/user/credits'
-          headers: headers
+        response = await fetch 'https://api.sendgrid.com/v3/user/credits', {
+          headers
+        }
+
         if !response.ok
           throw new Error 'Invalid SendGrid API key'
+
       # add other provider health checks here
+      # ...
 
     @isHealthy = true
     @timeHealthChecked = now
@@ -178,12 +187,16 @@ EspAccount.methods.getDomainSettings = ({ domain }) ->
         return result
       when 'sendgrid'
         headers = Authorization: "Bearer #{@SENDGRID_API_KEY}"
-        response = await fetch "https://api.sendgrid.com/v3/whitelabel/domains"
-          headers: headers
+        response = await fetch "https://api.sendgrid.com/v3/whitelabel/domains", {
+          headers
+        }
+
         if !response.ok
           throw new Error 'Failed to get SendGrid domain settings'
         return await response.json()
+
       # add other provider implementations here
+      # ...
 
     return { message: "Domain settings retrieved successfully" }
 

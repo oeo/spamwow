@@ -1,0 +1,618 @@
+<!-- vim: set expandtab tabstop=2 shiftwidth=2 softtabstop=2 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        :root {
+            --white-color: #fff;
+            --dark-color: #111;
+            --light-color: #777;
+            --primary-color: #447e9b;
+            --secondary-color: #79aec8;
+            --accent-color: #f5dd5d;
+            --text-color: #111111;
+            --background-color: #447e9b;
+            --success-color: #5cb85c;
+            --error-color: #d9534f;
+            --warning-color: #f0ad4e;
+            --info-color: #5bc0de;
+            --sidebar-color: #f9f9f9;
+            --font-primary: Arial, sans-serif;
+            --font-mono: monospace;
+            --font-size-base: 14px;
+            --font-size-small: 12px;
+            --font-size-large: 16px;
+            --font-size-huge: 36px;
+            --spacing-unit: 15px;
+            --border-color-gray: #ddd;
+            --border-radius-base: 3px;
+            --muted-color: #6c757d;
+        }
+
+        body, html {
+            font-family: var(--font-primary);
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-size: var(--font-size-base);
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--background-color);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 500;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 175px;
+            background-color: var(--sidebar-color);
+            color: var(--text-color);
+            padding: var(--spacing-unit);
+            overflow-y: auto;
+            flex-shrink: 0;
+            border-right: 1px solid var(--border-color-gray);
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 2px;
+        }
+
+        .sidebar a {
+            color: var(--text-color);
+            text-decoration: none;
+            display: block;
+            padding: 5px 8px;
+        }
+
+        .sidebar a:hover, .sidebar a:visited {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: var(--spacing-unit);
+            overflow-y: auto;
+            background-color: white;
+        }
+
+        .search-bar, .filter-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .text-muted {
+            color: var(--muted-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: var(--spacing-unit);
+            font-family: var(--font-primary);
+        }
+
+        th, td {
+            padding: 5px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color-gray);
+            border-right: 1px solid var(--border-color-gray);
+            border-left: 1px solid var(--border-color-gray);
+        }
+
+        th {
+            background-color: var(--white-color);
+            border-top: 1px solid var(--border-color-gray);
+            color: var(--light-color);
+            font-weight: normal;
+        }
+
+        td {
+            font-family: var(--font-mono);
+            font-size: var(--font-size-small);
+        }
+
+        tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        input[type="search"], input[type="text"], select {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color-gray);
+            border-radius: var(--border-radius-base);
+            font-size: var(--font-size-base);
+        }
+
+        .text-mono, .text-code, .text-code-like {
+            font-family: var(--font-mono);
+        }
+
+        .pagination {
+            margin-top: var(--spacing-unit);
+        }
+
+        .pagination a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin: 0 4px;
+        }
+
+        .pagination a.active {
+            text-decoration: underline;
+            color: inherit;
+        }
+
+        .button {
+            background-color: var(--dark-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: none; 
+            border-radius: var(--border-radius-base);
+        }
+
+        .button:hover {
+            filter: brightness(120%);
+        }
+
+        .button-primary { background-color: var(--primary-color); }
+        .button-success { background-color: var(--success-color); }
+        .button-error { background-color: var(--error-color); }
+        .button-warning { background-color: var(--warning-color); }
+        .button-info { background-color: var(--info-color); }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+            margin-bottom: 0;
+        }
+
+        .col-1, .col-2, .col-3, .col-4, .col-5, .col-6,
+        .col-7, .col-8, .col-9, .col-10, .col-11, .col-12 {
+            position: relative;
+            width: 100%;
+            padding-right: var(--spacing-unit);
+            padding-left: var(--spacing-unit);
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 768px) {
+            .col, .col-auto {
+                flex: 0 0 auto;
+                max-width: 100%;
+            }
+            .col-1 { flex: 0 0 8.333333%; max-width: 8.333333%; }
+            .col-2 { flex: 0 0 16.666667%; max-width: 16.666667%; }
+            .col-3 { flex: 0 0 25%; max-width: 25%; }
+            .col-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+            .col-5 { flex: 0 0 41.666667%; max-width: 41.666667%; }
+            .col-6 { flex: 0 0 50%; max-width: 50%; }
+            .col-7 { flex: 0 0 58.333333%; max-width: 58.333333%; }
+            .col-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
+            .col-9 { flex: 0 0 75%; max-width: 75%; }
+            .col-10 { flex: 0 0 83.333333%; max-width: 83.333333%; }
+            .col-11 { flex: 0 0 91.666667%; max-width: 91.666667%; }
+            .col-12 { flex: 0 0 100%; max-width: 100%; }
+        }
+
+        .hero-stat {
+            background-color: white;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid var(--border-color-gray);
+            margin-bottom: 15px;
+        }
+
+        .hero-stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .hero-stat-label {
+            font-size: var(--font-size-base);
+            color: #666;
+        }
+
+        .bordered-box {
+            background-color: white;
+            padding: var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+            border: 1px solid var(--border-color-gray);
+        }
+
+        .bordered {
+            border: 1px solid var(--border-color-gray);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-unit);
+        }
+
+        .breadcrumbs {
+            margin-bottom: var(--spacing-unit);
+            font-size: var(--font-size-base);
+        }
+
+        .breadcrumbs a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .text-mono, .text-code, .text-code-like {
+            font-family: monospace;
+        }
+
+        /* Padding helpers */
+        .p-0 { padding: 0 !important; }
+        .p-1 { padding: 0.25rem !important; }
+        .p-2 { padding: 0.5rem !important; }
+        .p-3 { padding: 1rem !important; }
+        .p-4 { padding: 1.5rem !important; }
+
+        /* Margin helpers */
+        .m-0 { margin: 0 !important; }
+        .m-1 { margin: 0.25rem !important; }
+        .m-2 { margin: 0.5rem !important; }
+        .m-3 { margin: 1rem !important; }
+        .m-4 { margin: 1.5rem !important; }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid var(--border-color-gray);
+            transition: none;
+            box-sizing: border-box;
+        }
+
+        .help-text {
+            display: block;
+            margin-top: 0.35rem;
+            font-size: var(--font-size-small);
+            color: var(--muted-color);
+        }
+
+        .alert {
+            padding: 0.75rem 1.25rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: var(--border-radius-base);
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+        }
+
+        .alert-error {
+            color: #721c24;
+            background-color: #f8d7da;
+        }
+
+        .checkbox-group, .radio-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .checkbox-group label, .radio-group label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .checkbox-group input[type="checkbox"],
+        .radio-group input[type="radio"] {
+            margin-right: 0.5rem;
+        }
+
+        .global-search {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        a:hover, a:visited {
+            color: var(--primary-color);
+        }
+
+        a.active {
+            text-decoration: underline;
+        }
+
+        .bg-primary { background-color: var(--primary-color); }
+        .bg-secondary { background-color: var(--secondary-color); }
+        .bg-accent { background-color: var(--accent-color); }
+        .bg-success { background-color: var(--success-color); }
+        .bg-error { background-color: var(--error-color); }
+        .bg-warning { background-color: var(--warning-color); }
+        .bg-info { background-color: var(--info-color); }
+        .bg-white { background-color: #ffffff; }
+        .bg-gray { background-color: var(--border-color-gray); }
+        .bg-orange { background-color: #ffa500; }
+
+        .border-orange { border-color: #ffa500; }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .text-huge { font-size: var(--font-size-huge); }
+        .text-small { font-size: var(--font-size-small); }
+
+        section {
+            margin-top: calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 2);
+        }
+
+        section:first-of-type {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <nav>
+                <ul>
+                    <li><a href="#/">Dashboard</a></li>
+                    <li><a href="#/users">Users</a></li>
+                    <li><a href="#/posts">Posts</a></li>
+                    <li>
+                        <a href="#/settings">Settings</a>
+                        <ul>
+                            <li><a href="#/settings/general">General</a></li>
+                            <li><a href="#/settings/security">Security</a></li>
+                            <li><a href="#/settings/advanced">Advanced</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+
+            <!-- Breadcrumbs -->
+            <section>
+            <div class="breadcrumbs">
+                <a href="#home">Home</a> &gt; <a href="#admin">Admin</a> &gt; Dashboard
+            </div>
+            </section>
+
+            <section>
+                <h2>Dashboard</h2>
+
+                <!-- Stats Section -->
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="text-huge">1,234</div>
+                        <span class="text-muted">Daily Active Users</span>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-huge">5,678</div>
+                        <span class="text-muted">Events Recorded</span>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-huge">90</div>
+                        <span class="text-muted">New User Signups</span>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-huge">456</div>
+                        <span class="text-muted">Users Online Now</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alerts Section -->
+            <section>
+                <div class="alert alert-success">This is a success message.</div>
+                <div class="alert alert-error">This is an error message.</div>
+            </section>
+
+            <section>
+                <!-- Data Table with filters and header metadata -->
+                <h2>Data Table</h2>
+                <div class="bordered-box">
+                    <!-- Filter Bar -->
+                    <div class="filter-bar">
+                        <input type="search" placeholder="Search ID">
+                        <input type="text" placeholder="Type Name...">
+                        <select>
+                            <option value="">Filter by Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">User</option>
+                        </select>
+                        <select>
+                            <option value="">Filter by Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">User</option>
+                        </select>
+                    </div>
+
+                    <!-- Table Header with actions -->
+                    <div class="table-header">
+                        <span>Total records: 2</span>
+                        <div>
+                            <button class="button">Add New</button>
+                            <button class="button">Export</button>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>John Doe</td>
+                                <td>john@example.com</td>
+                                <td>
+                                    <a href="#edit">Edit</a>
+                                    <a href="#delete">Delete</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>Jane Smith</td>
+                                <td>jane@example.com</td>
+                                <td>
+                                    <a href="#edit">Edit</a>
+                                    <a href="#delete">Delete</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Metadata and total records -->
+                    <div class="text-muted">
+                        Results: 2
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination">
+                        <a href="#">1</a>
+                        <a href="#" class="active">2</a>
+                        <a href="#">3</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Form Section -->
+            <h2>Form</h2>
+            <div class="row">
+                <div class="col-6">
+                    <div class="bordered-box">
+                        <form>
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username" required>
+                                <span class="help-text">Enter a unique username for the account.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" required>
+                                <span class="help-text">A valid email address is required.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" name="password" required>
+                                <span class="help-text">Must be at least 8 characters long.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="role">Role</label>
+                                <select id="role" name="role">
+                                    <option value="user">User</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="editor">Editor</option>
+                                </select>
+                                <span class="help-text">Select the user's role in the system.</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Gender</label>
+                                <div class="radio-group">
+                                    <label>
+                                        <input type="radio" name="gender" value="male"> Male
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="gender" value="female"> Female
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="gender" value="other"> Other
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="interests">Interests</label>
+                                <select id="interests" name="interests" multiple>
+                                    <option value="sports">Sports</option>
+                                    <option value="music">Music</option>
+                                    <option value="movies">Movies</option>
+                                    <option value="books">Books</option>
+                                    <option value="travel">Travel</option>
+                                </select>
+                                <span class="help-text">Select one or more interests (Ctrl+Click for multiple)</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="bio">Bio</label>
+                                <textarea id="bio" name="bio" rows="4"></textarea>
+                                <span class="help-text">A brief description about the user (optional).</span>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="active" name="active">
+                                    Active
+                                </label>
+                                <span class="help-text">Check if the user account should be active.</span>
+                            </div>
+                            <button type="submit" class="button">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons Section -->
+            <h2>Buttons</h2>
+            <button class="button">Primary</button>
+            <button class="button button-success">Success</button>
+            <button class="button button-error">Error</button>
+            <button class="button button-warning">Warning</button>
+            <button class="button button-info">Info</button>
+
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,606 @@
+<!-- vim: set expandtab tabstop=2 shiftwidth=2 softtabstop=2 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Versatile Admin Interface</title>
+    <style>
+        :root {
+            --primary-color: #447e9b;
+            --secondary-color: #79aec8;
+            --accent-color: #f5dd5d;
+            --text-color: #333;
+            --background-color: #f8f8f8;
+            --success-color: #5cb85c;
+            --error-color: #d9534f;
+            --warning-color: #f0ad4e;
+            --info-color: #5bc0de;
+            --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+            --font-size-base: 14px;
+            --font-size-small: 12px;
+            --spacing-unit: 15px;
+        }
+
+        body, html {
+            font-family: var(--font-primary);
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-size: var(--font-size-base);
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--background-color);
+        }
+
+        /* Grid System */
+        .container {
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+
+        .container-fluid {
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+
+        .col-1, .col-2, .col-3, .col-4, .col-5, .col-6,
+        .col-7, .col-8, .col-9, .col-10, .col-11, .col-12 {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .col-1 { flex: 0 0 8.333333%; max-width: 8.333333%; }
+            .col-2 { flex: 0 0 16.666667%; max-width: 16.666667%; }
+            .col-3 { flex: 0 0 25%; max-width: 25%; }
+            .col-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+            .col-5 { flex: 0 0 41.666667%; max-width: 41.666667%; }
+            .col-6 { flex: 0 0 50%; max-width: 50%; }
+            .col-7 { flex: 0 0 58.333333%; max-width: 58.333333%; }
+            .col-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
+            .col-9 { flex: 0 0 75%; max-width: 75%; }
+            .col-10 { flex: 0 0 83.333333%; max-width: 83.333333%; }
+            .col-11 { flex: 0 0 91.666667%; max-width: 91.666667%; }
+            .col-12 { flex: 0 0 100%; max-width: 100%; }
+        }
+
+        /* Helper Classes */
+        .text-code { font-family: monospace; }
+        .text-muted { color: #6c757d; }
+        .text-upper { text-transform: uppercase; }
+        .text-lower { text-transform: lowercase; }
+        .mt-0 { margin-top: 0 !important; }
+        .pt-0 { padding-top: 0 !important; }
+        .p-0 { padding: 0 !important; }
+        .m-0 { margin: 0 !important; }
+        .bg-danger { background-color: var(--error-color) !important; color: white; }
+        .bg-primary { background-color: var(--primary-color) !important; color: white; }
+        .bg-success { background-color: var(--success-color) !important; color: white; }
+
+        /* Layout */
+        .main-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: white;
+            color: var(--text-color);
+            padding: var(--spacing-unit);
+            overflow-y: auto;
+            flex-shrink: 0;
+            border-right: 1px solid #ddd;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 5px;
+        }
+
+        .sidebar a {
+            color: var(--text-color);
+            text-decoration: none;
+            display: block;
+            padding: 8px;
+        }
+
+        .sidebar a:hover, .sidebar a:visited {
+            background-color: var(--background-color);
+            color: var(--primary-color);
+        }
+
+        .sidebar ul ul {
+            margin-left: 15px;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: var(--spacing-unit);
+            overflow-y: auto;
+        }
+
+        .header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: calc(var(--spacing-unit) / 2) var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .button-error { background-color: var(--error-color); }
+        .button-success { background-color: var(--success-color); }
+        .button-warning { background-color: var(--warning-color); }
+        .button-info { background-color: var(--info-color); }
+
+        .hero-section {
+            background-color: white;
+            padding: var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .hero-stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .hero-stat-label {
+            font-size: var(--font-size-small);
+            color: #666;
+        }
+
+        .table-container {
+            background-color: white;
+            padding: var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-unit);
+        }
+
+        .table-bordered {
+            border: 1px solid #ddd;
+        }
+
+        .table-bordered th,
+        .table-bordered td {
+            border: 1px solid #ddd;
+        }
+
+        .table-condensed th,
+        .table-condensed td {
+            padding: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        td a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-right: 10px;
+        }
+
+        td a:hover, td a:visited {
+            color: var(--primary-color);
+        }
+
+        form {
+            background-color: white;
+            padding: var(--spacing-unit);
+            margin-right: var(--spacing-unit);
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-unit);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .help-text {
+            font-size: var(--font-size-small);
+            color: #666;
+            margin-top: 2px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            font-size: var(--font-size-base);
+            box-sizing: border-box;
+        }
+
+        .checkbox-group, .radio-group {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .checkbox-group input[type="checkbox"],
+        .radio-group input[type="radio"] {
+            margin-right: 10px;
+            margin-top: 3px;
+        }
+
+        .checkbox-content, .radio-content {
+            flex: 1;
+        }
+
+        .checkbox-content label,
+        .radio-content label {
+            margin-bottom: 2px;
+        }
+
+        .alert {
+            padding: 12px;
+            margin-bottom: var(--spacing-unit);
+        }
+
+        .alert-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .alert-error {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .pagination {
+            margin-top: var(--spacing-unit);
+        }
+
+        .pagination a {
+            color: var(--primary-color);
+            padding: 4px 8px;
+            text-decoration: none;
+            transition: background-color .3s;
+            border: 1px solid #ddd;
+            margin: 0 2px;
+        }
+
+        .pagination a.active {
+            background-color: var(--primary-color);
+            color: white;
+            border: 1px solid var(--primary-color);
+        }
+
+        .pagination a:hover:not(.active) {
+            background-color: #ddd;
+        }
+
+        .breadcrumbs {
+            margin-bottom: var(--spacing-unit);
+            font-size: var(--font-size-small);
+        }
+
+        .breadcrumbs a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+
+        /* Sidebar Widgets */
+        .sidebar-widget {
+            margin-bottom: var(--spacing-unit);
+            padding: var(--spacing-unit);
+            background-color: var(--background-color);
+        }
+
+        .sidebar-widget h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="sidebar">
+            <h2>Admin</h2>
+            <nav>
+                <ul>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#users">Users</a></li>
+                    <li><a href="#posts">Posts</a></li>
+                    <li>
+                        <a href="#settings">Settings</a>
+                        <ul>
+                            <li><a href="#general">General</a></li>
+                            <li><a href="#security">Security</a></li>
+                            <li><a href="#advanced">Advanced</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-widget">
+                <h3>Quick Stats</h3>
+                <p>Users: 1,234</p>
+                <p>Posts: 5,678</p>
+                <p>Comments: 9,012</p>
+            </div>
+            <div class="sidebar-widget">
+                <h3>Recent Activity</h3>
+                <ul>
+                    <li>User 'johndoe' logged in</li>
+                    <li>New post created: "Hello World"</li>
+                    <li>Comment added to post #123</li>
+                </ul>
+            </div>
+        </div>
+        <div class="main-content">
+            <header class="header">
+                <div>Welcome, Admin</div>
+                <button class="button">Logout</button>
+            </header>
+
+            <div class="breadcrumbs">
+                <a href="#home">Home</a> &gt; <a href="#admin">Admin</a> &gt; Dashboard
+            </div>
+
+            <h1>Dashboard</h1>
+
+            <div class="hero-section">
+                <div class="hero-stat">
+                    <div class="hero-stat-number">1,234</div>
+                    <div class="hero-stat-label">Daily Active Users</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-number">5,678</div>
+                    <div class="hero-stat-label">Events Recorded</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-number">90</div>
+                    <div class="hero-stat-label">New User Signups</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-number">456</div>
+                    <div class="hero-stat-label">Users Online Now</div>
+                </div>
+            </div>
+
+            <h2>Grid System Example</h2>
+            <div class="container">
+                <div class="row">
+                    <div class="col-6 bg-primary p-0">
+                        <p class="p-0 m-0">Column 1 (50% width)</p>
+                    </div>
+                    <div class="col-6 bg-success p-0">
+                        <p class="p-0 m-0">Column 2 (50% width)</p>
+                    </div>
+                </div>
+                <div class="row mt-0">
+                    <div class="col-4 bg-info p-0">
+                        <p class="p-0 m-0">Column 1 (33.33% width)</p>
+                    </div>
+                    <div class="col-4 bg-warning p-0">
+                        <p class="p-0 m-0">Column 2 (33.33% width)</p>
+                    </div>
+                    <div class="col-4 bg-danger p-0">
+                        <p class="p-0 m-0">Column 3 (33.33% width)</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Alerts</h2>
+            <div class="alert alert-success">This is a success message.</div>
+            <div class="alert alert-error">This is an error message.</div>
+
+            <h2>Table</h2>
+            <div class="table-container">
+                <div class="table-header">
+                    <span>Total records: 2</span>
+                    <div>
+                        <button class="button">Add New</button>
+                        <button class="button">Export</button>
+                    </div>
+                </div>
+                <table class="table-bordered table-condensed">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>John Doe</td>
+                            <td>john@example.com</td>
+                            <td>
+                                <a href="#edit">Edit</a>
+                                <a href="#delete">Delete</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Jane Smith</td>
+                            <td>jane@example.com</td>
+                            <td>
+                                <a href="#edit">Edit</a>
+                                <a href="#delete">Delete</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Form</h2>
+            <form>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                    <div class="help-text">Enter a unique username for the account.</div>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                    <div class="help-text">A valid email address is required.</div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                    <div class="help-text">Must be at least 8 characters long.</div>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                        <option value="editor">Editor</option>
+                    </select>
+                    <div class="help-text">Select the user's role in the system.</div>
+                </div>
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <select id="country" name="country">
+                        <option value="">Select a country</option>
+                        <option value="us">United States</option>
+                        <option value="ca">Canada</option>
+                        <option value="uk">United Kingdom</option>
+                        <option value="au">Australia</option>
+                    </select>
+                    <div class="help-text">Select the user's country of residence.</div>
+                </div>
+                <div class="form-group">
+                    <label>Gender</label>
+                    <div class="radio-group">
+                        <input type="radio" id="male" name="gender" value="male">
+                        <div class="radio-content">
+                            <label for="male">Male</label>
+                        </div>
+                    </div>
+                    <div class="radio-group">
+                        <input type="radio" id="female" name="gender" value="female">
+                        <div class="radio-content">
+                            <label for="female">Female</label>
+                        </div>
+                    </div>
+                    <div class="radio-group">
+                        <input type="radio" id="other" name="gender" value="other">
+                        <div class="radio-content">
+                            <label for="other">Other</label>
+                        </div>
+                    </div>
+                    <div class="help-text">Select the user's gender.</div>
+                </div>
+                <div class="form-group">
+                    <label for="bio">Bio</label>
+                    <textarea id="bio" name="bio" rows="4"></textarea>
+                    <div class="help-text">A brief description about the user (optional).</div>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="active" name="active">
+                    <div class="checkbox-content">
+                        <label for="active">Active</label>
+                        <div class="help-text">Check if the user account should be active.</div>
+                    </div>
+                </div>
+                <button type="submit" class="button">Submit</button>
+            </form>
+
+            <h2>Buttons</h2>
+            <button class="button">Primary</button>
+            <button class="button button-success">Success</button>
+            <button class="button button-error">Error</button>
+            <button class="button button-warning">Warning</button>
+            <button class="button button-info">Info</button>
+
+            <h2>Helper Classes Example</h2>
+            <p class="text-code">This is monospaced text.</p>
+            <p class="text-muted">This is muted text.</p>
+            <p class="text-upper">This text is uppercase.</p>
+            <p class="text-lower">THIS TEXT IS LOWERCASE.</p>
+            <div class="bg-danger p-0">
+                <p class="p-0 m-0">This has a danger background.</p>
+            </div>
+
+            <h2>Pagination</h2>
+            <div class="pagination">
+                <a href="#">Prev</a>
+                <a href="#" class="active">1</a>
+                <a href="#">2</a>
+                <a href="#">3</a>
+                <a href="#">4</a>
+                <a href="#">5</a>
+                <a href="#">Next</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

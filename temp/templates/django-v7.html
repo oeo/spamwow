@@ -1,0 +1,443 @@
+<!-- vim: set expandtab tabstop=2 shiftwidth=2 softtabstop=2 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #447e9b;
+            --secondary-color: #79aec8;
+            --text-color: #333;
+            --background-color: #f8f8f8;
+            --success-color: #5cb85c;
+            --error-color: #d9534f;
+            --warning-color: #f0ad4e;
+            --info-color: #5bc0de;
+            --dark-color: #111111;
+            --font-primary: Arial, sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue';
+            --font-size-base: 14px;
+            --font-size-small: 12px;
+            --spacing-unit: 15px;
+        }
+
+        body, html {
+            font-family: var(--font-primary);
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-size: var(--font-size-base);
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--background-color);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 500;
+        }
+
+        .main-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: white;
+            color: var(--text-color);
+            padding: var(--spacing-unit);
+            overflow-y: auto;
+            flex-shrink: 0;
+            border-right: 1px solid #ddd;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 2px;
+        }
+
+        .sidebar a {
+            color: var(--text-color);
+            text-decoration: none;
+            display: block;
+            padding: 5px 0;
+            font-size: var(--font-size-base);
+        }
+
+        .sidebar a:hover, .sidebar a.active {
+            background-color: var(--background-color);
+            color: var(--primary-color);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: var(--spacing-unit);
+            overflow-y: auto;
+        }
+
+        .header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #2b5464;
+        }
+
+        .container {
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            margin-right: auto;
+            margin-left: auto;
+            box-sizing: border-box;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+
+        .col-6, .col-4 {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 768px) {
+            .col-6 { flex: 0 0 50%; max-width: 50%; }
+            .col-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+        }
+
+        .hero-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-unit);
+        }
+
+        .hero-stat {
+            background-color: white;
+            padding: 15px;
+            text-align: center;
+            flex: 1;
+            margin-right: 15px;
+        }
+
+        .hero-stat:last-child {
+            margin-right: 0;
+        }
+
+        .hero-stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .hero-stat-label {
+            font-size: var(--font-size-small);
+            color: #666;
+        }
+
+        .sidebar-widget {
+            margin-bottom: var(--spacing-unit);
+            padding: var(--spacing-unit);
+            background-color: var(--background-color);
+        }
+
+        .sidebar-widget h3 {
+            margin-top: 0;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-widget p, .sidebar-widget li {
+            font-size: var(--font-size-small);
+            margin: 5px 0;
+        }
+
+        .bg-primary { background-color: var(--primary-color) !important; }
+        .bg-secondary { background-color: var(--secondary-color) !important; }
+        .bg-success { background-color: var(--success-color) !important; }
+        .bg-error { background-color: var(--error-color) !important; }
+        .bg-warning { background-color: var(--warning-color) !important; }
+        .bg-info { background-color: var(--info-color) !important; }
+        .bg-111 { background-color: var(--dark-color) !important; }
+
+        .color-white, .color-fff { color: #fff !important; }
+        .color-111 { color: var(--dark-color) !important; }
+
+        .text-bold { font-weight: 700 !important; }
+        .text-semi-bold { font-weight: 600 !important; }
+        .text-underline { text-decoration: underline !important; }
+        .text-mono { font-family: monospace !important; }
+        .text-right { text-align: right !important; }
+        .text-left { text-align: left !important; }
+        .text-center { text-align: center !important; }
+
+        .hidden { display: none !important; }
+
+        .opacity-0 { opacity: 0 !important; }
+        .opacity-25 { opacity: 0.25 !important; }
+        .opacity-50 { opacity: 0.5 !important; }
+        .opacity-75 { opacity: 0.75 !important; }
+        .opacity-100 { opacity: 1 !important; }
+
+        .text-muted { color: #6c757d !important; }
+        .text-upper { text-transform: uppercase !important; }
+        .text-lower { text-transform: lowercase !important; }
+        .mt-0 { margin-top: 0 !important; }
+        .pt-0 { padding-top: 0 !important; }
+        .p-0 { padding: 0 !important; }
+        .m-0 { margin: 0 !important; }
+
+        .bg-black { background-color: var(--dark-color) !important; }
+        .color-black { color: var(--dark-color) !important; }
+
+        .table-container {
+            background-color: white;
+            padding: var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-unit);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .alert {
+            padding: 12px;
+            margin-bottom: var(--spacing-unit);
+        }
+
+        .alert-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .alert-error {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .breadcrumbs {
+            margin-bottom: var(--spacing-unit);
+            font-size: var(--font-size-small);
+        }
+
+        .breadcrumbs a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="sidebar">
+            <h2>Admin</h2>
+            <nav>
+                <ul>
+                    <li><a href="#dashboard" class="active">Dashboard</a></li>
+                    <li><a href="#users">Users</a></li>
+                    <li><a href="#posts">Posts</a></li>
+                    <li>
+                        <a href="#settings">Settings</a>
+                        <ul>
+                            <li><a href="#general">General</a></li>
+                            <li><a href="#security">Security</a></li>
+                            <li><a href="#advanced">Advanced</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-widget">
+                <h3>Quick Stats</h3>
+                <p>Users: 1,234</p>
+                <p>Posts: 5,678</p>
+                <p>Comments: 9,012</p>
+            </div>
+            <div class="sidebar-widget">
+                <h3>Recent Activity</h3>
+                <ul>
+                    <li>User 'johndoe' logged in</li>
+                    <li>New post created: "Hello World"</li>
+                    <li>Comment added to post #123</li>
+                </ul>
+            </div>
+        </div>
+        <div class="main-content">
+            <header class="header">
+                <div>Welcome, Admin</div>
+                <button class="button">Logout</button>
+            </header>
+
+            <div class="breadcrumbs">
+                <a href="#home">Home</a> &gt; <a href="#admin">Admin</a> &gt; Dashboard
+            </div>
+
+            <h1>Dashboard</h1>
+
+            <div class="hero-section">
+                <div class="hero-stat">
+                    <div class="hero-stat-number">1,234</div>
+                    <div class="hero-stat-label">Daily Active Users</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-number">5,678</div>
+                    <div class="hero-stat-label">Events Recorded</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-number">90</div>
+                    <div class="hero-stat-label">New User Signups</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-number">456</div>
+                    <div class="hero-stat-label">Users Online Now</div>
+                </div>
+            </div>
+
+            <h2>Grid System Example</h2>
+            <div class="container">
+                <div class="row">
+                    <div class="col-6 bg-secondary color-fff">
+                        <p>Column 1 (50% width)</p>
+                    </div>
+                    <div class="col-6 bg-success color-fff">
+                        <p>Column 2 (50% width)</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4 bg-secondary color-fff">
+                        <p>Column 1 (33.33% width)</p>
+                    </div>
+                    <div class="col-4 bg-success color-fff">
+                        <p>Column 2 (33.33% width)</p>
+                    </div>
+                    <div class="col-4 bg-error color-fff">
+                        <p>Column 3 (33.33% width)</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Alerts</h2>
+            <div class="alert alert-success">This is a success message.</div>
+            <div class="alert alert-error">This is an error message.</div>
+
+            <h2>Table</h2>
+            <div class="table-container">
+                <div class="table-header">
+                    <span>Total records: 2</span>
+                    <div>
+                        <button class="button">Add New</button>
+                        <button class="button">Export</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>John Doe</td>
+                            <td>john@example.com</td>
+                            <td>
+                                <a href="#edit">Edit</a>
+                                <a href="#delete">Delete</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Jane Smith</td>
+                            <td>jane@example.com</td>
+                            <td>
+                                <a href="#edit">Edit</a>
+                                <a href="#delete">Delete</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Helper Classes Example</h2>
+            <p class="text-mono">This is monospaced text.</p>
+            <p class="text-muted">This is muted text.</p>
+            <p class="text-upper">This text is uppercase.</p>
+            <p class="text-lower">THIS TEXT IS LOWERCASE.</p>
+            <div class="bg-error p-0">
+                <p class="p-0 m-0 color-fff">This has an error background with white text.</p>
+            </div>
+            <p class="text-bold">This text is bold.</p>
+            <p class="text-semi-bold">This text is semi-bold.</p>
+            <p class="text-underline">This text is underlined.</p>
+            <p class="text-center">This text is centered.</p>
+            <p class="opacity-50">This text is at 50% opacity.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -20,11 +20,10 @@ modelOpts = {
 
 Campaign = new Schema {
 
-  # aws account managing this campaign
-  # @todo: replace with service account
-  awsAccount: {
+  # esp account managing this campaign
+  espAccount: {
     type: String
-    ref: 'AwsAccount'
+    ref: 'EspAccount'
     required: true
   }
 
@@ -114,6 +113,7 @@ Campaign = new Schema {
   # timing
   timeStarted: { type: Number, default: 0 }
   timeCompleted: { type: Number, default: 0 }
+
   lastSendAttempt: { type: Number, default: 0 }
   
   # stats

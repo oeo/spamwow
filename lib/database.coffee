@@ -24,7 +24,6 @@ mongoose.connect env.MONGODB_URI
   .catch (error) -> L.error error
 
 # redis
-console.log env.REDIS_URI
 redis = new IORedis env.REDIS_URI
   .on 'error', (error) -> L.error error
   .on 'connect', ->
@@ -70,4 +69,3 @@ module.exports = {
   connected
   ready
 }
-

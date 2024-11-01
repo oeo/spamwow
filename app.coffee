@@ -94,7 +94,37 @@ module.exports = app
 
 if !module.parent
   { ready } = require(__dirname + '/lib/database')
+
   await ready()
+
+  # initialize proxy websites
+  try
+    { ProxyWebsites } = require './models'
+    
+    # stop any potentially running proxies first (cleanup)
+    await ProxyWebsites.stopAll()
+    
+    # start all active proxies
+    results = await ProxyWebsites.startAll()
+    
+    # log results
+    for result in results
+      if result.success
+        L.log "Started proxy website", { _id: result._id, pid: result.pid }
+      else
+        L.error "Failed to start proxy website", { _id: result._id, error: result.error }
+
+    # register cleanup on app shutdown
+    process.on 'SIGTERM', ->
+      await ProxyWebsites.stopAll()
+      process.exit(0)
+
+    process.on 'SIGINT', ->
+      await ProxyWebsites.stopAll()
+      process.exit(0)
+
+  catch error
+    L.error "Error initializing proxy websites:", error
 
   app.listen (localPort = env.LOCAL_PORT ? 8000), ->
     L.log "listening :#{localPort}"

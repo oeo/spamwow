@@ -43,4 +43,3 @@ module.exports = {
 if !module.parent
   await run()
   exit 0
-

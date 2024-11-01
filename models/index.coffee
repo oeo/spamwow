@@ -5,6 +5,8 @@ module.exports = {
   Domains: require('./domains')
   EmailDns: require('./emailDns')
   Emails: require('./emails')
+  EspAccounts: require('./espAccounts')
   Events: require('./events')
+  ProxyWebsites: require('./proxyWebsites')
 }
 

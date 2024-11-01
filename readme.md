@@ -1,7 +1,7 @@
 # @todo
-- [ ] add smtp server for domains
-- [ ] add docker deployment management
-
+- [ ] add job queue implementation
+- [ ] add cron job implementation
+- [ ] add proxy service management
 
 ---
 

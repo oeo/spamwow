@@ -1,0 +1,378 @@
+<!-- vim: set expandtab tabstop=2 shiftwidth=2 softtabstop=2 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Django-Inspired Admin Interface</title>
+    <style>
+        :root {
+            --primary-color: #5b80b2;
+            --secondary-color: #79aec8;
+            --accent-color: #f5dd5d;
+            --text-color: #333;
+            --background-color: #f8f8f8;
+            --success-color: #8fbc8f;
+            --error-color: #cd5c5c;
+            --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+            --font-size-base: 14px;
+            --font-size-small: 12px;
+            --spacing-unit: 15px;
+        }
+
+        body, html {
+            font-family: var(--font-primary);
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-size: var(--font-size-base);
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--background-color);
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: var(--primary-color);
+            color: white;
+            padding: var(--spacing-unit);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 5px;
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 8px;
+        }
+
+        .sidebar a:hover, .sidebar a:visited {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .sidebar ul ul {
+            margin-left: 15px;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: var(--spacing-unit);
+            overflow-y: auto;
+        }
+
+        .header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: calc(var(--spacing-unit) / 2) var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .table-container {
+            background-color: white;
+            padding: var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-unit);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        td a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-right: 10px;
+        }
+
+        td a:hover, td a:visited {
+            color: var(--primary-color);
+        }
+
+        form {
+            background-color: white;
+            padding: var(--spacing-unit);
+            margin-right: var(--spacing-unit);
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-unit);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .help-text {
+            font-size: var(--font-size-small);
+            color: #666;
+            margin-top: 2px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            font-size: var(--font-size-base);
+            box-sizing: border-box;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            margin-top: 3px;
+        }
+
+        .checkbox-content {
+            flex: 1;
+        }
+
+        .alert {
+            padding: 12px;
+            margin-bottom: var(--spacing-unit);
+        }
+
+        .alert-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .alert-error {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .pagination {
+            margin-top: var(--spacing-unit);
+        }
+
+        .pagination a {
+            color: var(--primary-color);
+            padding: 8px 12px;
+            text-decoration: none;
+            transition: background-color .3s;
+            border: 1px solid #ddd;
+            margin: 0 4px;
+        }
+
+        .pagination a.active {
+            background-color: var(--primary-color);
+            color: white;
+            border: 1px solid var(--primary-color);
+        }
+
+        .pagination a:hover:not(.active) {
+            background-color: #ddd;
+        }
+
+        .breadcrumbs {
+            margin-bottom: var(--spacing-unit);
+            font-size: var(--font-size-small);
+        }
+
+        .breadcrumbs a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Admin</h2>
+            <nav>
+                <ul>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#users">Users</a></li>
+                    <li><a href="#posts">Posts</a></li>
+                    <li>
+                        <a href="#settings">Settings</a>
+                        <ul>
+                            <li><a href="#general">General</a></li>
+                            <li><a href="#security">Security</a></li>
+                            <li><a href="#advanced">Advanced</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <div class="main-content">
+            <header class="header">
+                <div>Welcome, Admin</div>
+                <button class="button">Logout</button>
+            </header>
+
+            <div class="breadcrumbs">
+                <a href="#home">Home</a> &gt; <a href="#admin">Admin</a> &gt; Components
+            </div>
+
+            <h1>Django-Inspired Admin Components</h1>
+
+            <h2>Alerts</h2>
+            <div class="alert alert-success">This is a success message.</div>
+            <div class="alert alert-error">This is an error message.</div>
+
+            <h2>Table</h2>
+            <div class="table-container">
+                <div class="table-header">
+                    <span>Total records: 2</span>
+                    <div>
+                        <button class="button">Add New</button>
+                        <button class="button">Export</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>John Doe</td>
+                            <td>john@example.com</td>
+                            <td>
+                                <a href="#edit">Edit</a>
+                                <a href="#delete">Delete</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Jane Smith</td>
+                            <td>jane@example.com</td>
+                            <td>
+                                <a href="#edit">Edit</a>
+                                <a href="#delete">Delete</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Form</h2>
+            <form>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                    <div class="help-text">Enter a unique username for the account.</div>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                    <div class="help-text">A valid email address is required.</div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                    <div class="help-text">Must be at least 8 characters long.</div>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                        <option value="editor">Editor</option>
+                    </select>
+                    <div class="help-text">Select the user's role in the system.</div>
+                </div>
+                <div class="form-group">
+                    <label for="bio">Bio</label>
+                    <textarea id="bio" name="bio" rows="4"></textarea>
+                    <div class="help-text">A brief description about the user (optional).</div>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="active" name="active">
+                    <div class="checkbox-content">
+                        <label for="active">Active</label>
+                        <div class="help-text">Check if the user account should be active.</div>
+                    </div>
+                </div>
+                <button type="submit" class="button">Submit</button>
+            </form>
+
+            <h2>Pagination</h2>
+            <div class="pagination">
+                <a href="#">&laquo;</a>
+                <a href="#" class="active">1</a>
+                <a href="#">2</a>
+                <a href="#">3</a>
+                <a href="#">4</a>
+                <a href="#">5</a>
+                <a href="#">&raquo;</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

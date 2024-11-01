@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brutalist Admin Interface</title>
+    <style>
+        :root {
+            --primary-color: #000000;
+            --secondary-color: #333333;
+            --background-color: #ffffff;
+            --text-color: #000000;
+            --accent-color: #0000ff;
+            --success-color: #008000;
+            --error-color: #ff0000;
+        }
+
+        body, html {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar h2 {
+            font-family: 'Courier New', Courier, monospace;
+            margin-top: 0;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .sidebar a:hover {
+            background-color: var(--primary-color);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            border: 2px solid white;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+        }
+
+        .button:hover {
+            background-color: white;
+            color: var(--primary-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid var(--primary-color);
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        form {
+            background-color: var(--background-color);
+            padding: 20px;
+            border: 2px solid var(--primary-color);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid var(--primary-color);
+            font-size: 12px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .alert {
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 2px solid var(--primary-color);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+        }
+
+        .alert-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .alert-error {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .pagination {
+            margin-top: 20px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .pagination a {
+            color: var(--primary-color);
+            padding: 5px 10px;
+            text-decoration: none;
+            border: 1px solid var(--primary-color);
+            margin: 0 2px;
+        }
+
+        .pagination a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        h1, h2 {
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>ADMIN</h2>
+            <nav>
+                <ul>
+                    <li><a href="#dashboard">DASHBOARD</a></li>
+                    <li><a href="#users">USERS</a></li>
+                    <li><a href="#posts">POSTS</a></li>
+                    <li><a href="#settings">SETTINGS</a></li>
+                    <li><a href="#analytics">ANALYTICS</a></li>
+                    <li><a href="#reports">REPORTS</a></li>
+                    <li><a href="#logs">LOGS</a></li>
+                    <li><a href="#backups">BACKUPS</a></li>
+                    <li><a href="#security">SECURITY</a></li>
+                    <li><a href="#api">API</a></li>
+                    <li><a href="#integrations">INTEGRATIONS</a></li>
+                    <li><a href="#help">HELP</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="main-content">
+            <header class="header">
+                <div>ADMIN: JOHN DOE</div>
+                <button class="button">LOGOUT</button>
+            </header>
+
+            <h1>BRUTALIST ADMIN COMPONENTS</h1>
+
+            <h2>ALERTS</h2>
+            <div class="alert alert-success">SUCCESS: OPERATION COMPLETED</div>
+            <div class="alert alert-error">ERROR: INVALID INPUT</div>
+
+            <h2>TABLE</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>NAME</th>
+                        <th>EMAIL</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>JOHN DOE</td>
+                        <td>JOHN@EXAMPLE.COM</td>
+                        <td>
+                            <button class="button">EDIT</button>
+                            <button class="button" style="background-color: var(--error-color);">DELETE</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>JANE SMITH</td>
+                        <td>JANE@EXAMPLE.COM</td>
+                        <td>
+                            <button class="button">EDIT</button>
+                            <button class="button" style="background-color: var(--error-color);">DELETE</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>FORM</h2>
+            <form>
+                <div class="form-group">
+                    <label for="username">USERNAME</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">EMAIL</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">PASSWORD</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">ROLE</label>
+                    <select id="role" name="role">
+                        <option value="user">USER</option>
+                        <option value="admin">ADMIN</option>
+                        <option value="editor">EDITOR</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="bio">BIO</label>
+                    <textarea id="bio" name="bio" rows="4"></textarea>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="active" name="active">
+                    <label for="active">ACTIVE</label>
+                </div>
+                <button type="submit" class="button">SUBMIT</button>
+            </form>
+
+            <h2>PAGINATION</h2>
+            <div class="pagination">
+                <a href="#">&lt;&lt;</a>
+                <a href="#" class="active">1</a>
+                <a href="#">2</a>
+                <a href="#">3</a>
+                <a href="#">4</a>
+                <a href="#">5</a>
+                <a href="#">&gt;&gt;</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
