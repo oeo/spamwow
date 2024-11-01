@@ -364,22 +364,6 @@ ProxyWebsiteSchema.pre 'remove', (next) ->
     return next(error)
   next()
 
-# cleanup function for graceful shutdown
-cleanup = ->
-  try
-    model = mongoose.model(modelOpts.name)
-    proxies = await model.find({ isRunning: true })
-    for proxy in proxies
-      await proxy.stop()
-    process.exit(0)
-  catch error
-    L.error 'Error during cleanup', error
-    process.exit(1)
-
-# register cleanup handlers
-process.on 'SIGTERM', cleanup
-process.on 'SIGINT', cleanup
-
 # create and export the model
 model = mongoose.model modelOpts.name, ProxyWebsiteSchema
 module.exports = EXPOSE(model)
