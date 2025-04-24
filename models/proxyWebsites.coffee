@@ -89,15 +89,20 @@ ProxyWebsiteSchema.plugin(basePlugin)
 
 # auto-assign port if not specified
 ProxyWebsiteSchema.pre 'save', (next) ->
+  # Check modification status *before* save completes and store on instance
+  if @isModified('isActive') or @isModified('port') or @isModified('originalHost')
+    @_needsRestart = true
+
+  # Handle port assignment logic (existing)
   return next() if @port
-  
+
   try
     docs = await @constructor.find({}, 'port').sort(port: 1)
     ports = []
 
     if docs
       ports = _.map docs, (x) -> +x.port
-    
+
     # start with minimum port from range
     [minPort, maxPort] = PORT_RANGE
 
@@ -326,7 +331,7 @@ ProxyWebsiteSchema.statics.stopAll = (opt = {}) ->
     # L 'Stopping all proxy websites'
     proxies = await @find({ isRunning: true })
     results = []
-    
+
     for proxy in proxies
       try
         await proxy.stop()
@@ -345,16 +350,21 @@ ProxyWebsiteSchema.statics.stopAll = (opt = {}) ->
     throw error
 
 # middleware to handle process management on save
-ProxyWebsiteSchema.pre 'save', (next) ->
-  try
-    if @isModified('isActive') or @isModified('port') or @isModified('originalHost')
-      if @isActive
-        await @restart()
-      else
-        await @stop()
-  catch error
-    return next(error)
-  next()
+ProxyWebsiteSchema.post 'save', (doc) ->
+  # Check if restart/stop is needed (flag set in pre-save)
+  if doc._needsRestart
+    delete doc._needsRestart # Clean up temporary flag
+    # Run restart/stop logic asynchronously after save
+    do -> # Use 'do' for IIFE
+      try
+        if doc.isActive
+          L 'Post-save: restarting proxy', { _id: doc._id }
+          await doc.restart()
+        else
+          L 'Post-save: stopping proxy', { _id: doc._id }
+          await doc.stop()
+      catch error
+        L.error 'Post-save process management failed', { _id: doc._id, error: error.message }
 
 # cleanup on model removal
 ProxyWebsiteSchema.pre 'remove', (next) ->

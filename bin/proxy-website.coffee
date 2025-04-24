@@ -48,7 +48,13 @@ server = createServer (req, res) ->
   delete options.headers['host']  # remove the host header
   delete options.headers['origin']
   delete options.headers['referer']
-  
+
+  # remove caching headers to force fetching full content for modification
+  delete options.headers['if-none-match']
+  delete options.headers['if-modified-since']
+  delete options.headers['cache-control']
+  delete options.headers['pragma']
+
   # set the correct host header for the target
   options.headers['host'] = cleanHost
 
@@ -60,9 +66,27 @@ server = createServer (req, res) ->
   proxyReq = requestModule.request options, (proxyRes) =>
     return if activeResponses.get(res)
 
+    # Check content type early to decide handling strategy
+    contentType = proxyRes.headers['content-type'] || ''
+    isTextContent = contentType.includes('text') ||
+                   contentType.includes('json') ||
+                   contentType.includes('xml') ||
+                   contentType.includes('javascript') ||
+                   contentType.includes('application/x-javascript')
+
+    # Handle binary content: pipe directly
+    if !isTextContent
+      L 'Handling binary content', { url: req.url, contentType }
+      activeResponses.set(res, true)
+      res.writeHead(proxyRes.statusCode, proxyRes.headers) # Pass original headers
+      proxyRes.pipe(res) # Pipe the raw stream
+      return
+
+    # Handle text content: buffer, decompress, modify, send
+    L 'Handling text content', { url: req.url, contentType }
     responseHeaders = {}
     for [key, value] in Object.entries(proxyRes.headers)
-      # skip transfer-encoding and content-encoding, we'll handle them manually
+      # skip transfer-encoding and content-encoding, we'll handle them manually for text
       if !['content-length', 'content-encoding', 'transfer-encoding'].includes(key.toLowerCase())
         responseHeaders[key] = value
 
@@ -77,14 +101,13 @@ server = createServer (req, res) ->
 
     proxyRes.on 'end', ->
       try
-        return if activeResponses.get(res)
+        return if activeResponses.get(res) # Already handled (e.g., binary piped)
 
         body = Buffer.concat(chunks)
-        contentType = proxyRes.headers['content-type'] || ''
-        
+
         # check content encoding before attempting any modifications
         encoding = proxyRes.headers['content-encoding']?.toLowerCase()
-        
+
         try
           if encoding == 'gzip'
             body = zlib.gunzipSync(body)
@@ -93,81 +116,64 @@ server = createServer (req, res) ->
           else if encoding == 'br'  # handle brotli compression
             body = zlib.brotliDecompressSync(body)
         catch error
-          console.error "Decompression error:", error
-          # if decompression fails, send original content
+          console.error "Decompression error for text content:", error
+          # if decompression fails, send original (potentially compressed) content with original headers
           activeResponses.set(res, true)
-          res.writeHead(proxyRes.statusCode, proxyRes.headers)
-          res.end(body)
+          res.writeHead(proxyRes.statusCode, proxyRes.headers) # Use original headers here
+          res.end(Buffer.concat(chunks)) # Send original buffer
           return
 
-        isTextContent = contentType.includes('text') || 
-                       contentType.includes('json') || 
-                       contentType.includes('xml') || 
-                       contentType.includes('javascript') ||
-                       contentType.includes('application/x-javascript')
+        # now body is decompressed text
+        content = body.toString('utf8')
 
-        if isTextContent
-          content = body.toString('utf8')
+        # replace the original host with the new host in all urls
+        originalUrlPattern = proxyWebsite.originalHost.replace(/^https?:\/\//, '')
+        newBaseUrl = "#{protocol}://#{actualHost}"
 
-          # replace the original host with the new host in all urls
-          originalUrlPattern = proxyWebsite.originalHost.replace(/^https?:\/\//, '')
-          newBaseUrl = "#{protocol}://#{actualHost}"
-          
-          # create regex patterns for different url formats
-          patterns = [
+        # create regex patterns for different url formats
+        patterns = [
 
-            # absolute urls with protocol
-            [new RegExp("https?://#{originalUrlPattern}/", 'g'), "#{newBaseUrl}/"]
-            [new RegExp("https?://#{originalUrlPattern}([^/])", 'g'), "#{newBaseUrl}/$1"]
+          # absolute urls with protocol
+          [new RegExp("https?://#{originalUrlPattern}/", 'g'), "#{newBaseUrl}/"]
+          [new RegExp("https?://#{originalUrlPattern}([^/])", 'g'), "#{newBaseUrl}/$1"]
 
-            # protocol-relative urls
-            [new RegExp("//#{originalUrlPattern}/", 'g'), "//#{actualHost}/"]
-            [new RegExp("//#{originalUrlPattern}([^/])", 'g'), "//#{actualHost}/$1"]
+          # protocol-relative urls
+          [new RegExp("//#{originalUrlPattern}/", 'g'), "//#{actualHost}/"]
+          [new RegExp("//#{originalUrlPattern}([^/])", 'g'), "//#{actualHost}/$1"]
+        ]
 
-            # absolute paths starting with single quote
-            [new RegExp("'/((?!//)[^']*)'", 'g'), "'#{newBaseUrl}/$1'"]
+        # apply all url replacements
+        for [pattern, replacement] in patterns
+          content = content.replace(pattern, replacement)
 
-            # absolute paths starting with double quote
-            [new RegExp('"/((?!//)[^"]*)"', 'g'), "\"#{newBaseUrl}/$1\""]
-          ]
-          
-          # apply all url replacements
-          for [pattern, replacement] in patterns
-            content = content.replace(pattern, replacement)
+        # apply any additional string replacements from config
+        for replacement in (proxyWebsite.stringReplacements || [])
+          content = content.replace(new RegExp(replacement.find, 'g'), replacement.replace)
 
-          # apply any additional string replacements from config
-          for replacement in (proxyWebsite.stringReplacements || [])
-            content = content.replace(new RegExp(replacement.find, 'g'), replacement.replace)
+        # handle header/footer injections for html
+        if contentType.includes('text/html')
+          headerScripts = proxyWebsite.injectScriptHeader || ''
+          footerScripts = proxyWebsite.injectScriptFooter || ''
 
-          # handle header/footer injections for html
-          if contentType.includes('text/html')
-            headerScripts = proxyWebsite.injectScriptHeader || ''
-            footerScripts = proxyWebsite.injectScriptFooter || ''
+          # inject into <head>
+          if headerScripts and content.includes('<head>')
+            content = content.replace('<head>', "<head>#{headerScripts}")
 
-            # inject into <head>
-            if headerScripts and content.includes('<head>')
-              content = content.replace('<head>', "<head>#{headerScripts}")
+          # inject scripts before </body>
+          if footerScripts
+            if content.includes('</body>')
+              content = content.replace('</body>', "#{footerScripts}</body>")
+            else if content.includes('</html>')
+              content = content.replace('</html>', "#{footerScripts}</html>")
 
-            # inject scripts before </body>
-            if footerScripts
-              if content.includes('</body>')
-                content = content.replace('</body>', "#{footerScripts}</body>")
-              else if content.includes('</html>')
-                content = content.replace('</html>', "#{footerScripts}</html>")
-
-          # send modified text response
-          activeResponses.set(res, true)
-          res.writeHead(proxyRes.statusCode, responseHeaders)
-          res.end(content)
-
-        else
-          # for binary content, preserve original headers including content-encoding
-          activeResponses.set(res, true)
-          res.writeHead(proxyRes.statusCode, proxyRes.headers)
-          res.end(body)
+        # send modified text response (set content-length manually if needed, or let Node handle it)
+        activeResponses.set(res, true)
+        # responseHeaders['Content-Length'] = Buffer.byteLength(content, 'utf8') # Optional: set content-length
+        res.writeHead(proxyRes.statusCode, responseHeaders) # Send modified headers (no content-encoding)
+        res.end(content) # Send modified, decompressed content
 
       catch error
-        console.error "Error processing response: #{error.message}"
+        console.error "Error processing text response: #{error.message}"
         if !activeResponses.get(res)
           res.writeHead(500, 'Content-Type': 'text/plain')
           res.end("Error processing response")
@@ -210,19 +216,27 @@ server.on 'upgrade', (req, socket, head) ->
 
   ws = https.request wsOptions
   ws.end()
-  
+
   socket.pipe(ws).pipe(socket)
 
 # start the proxy server
 run = (->
   await ready()
 
-  proxyWebsite = await ProxyWebsites.findOne(_id: process.env.PROXY_WEBSITE_ID)
+  fetchedProxy = await ProxyWebsites.findOne(_id: process.env.PROXY_WEBSITE_ID)
+  # proxyWebsite = { # <-- Remove this faulty overwrite
+  #   _id: null
+  # }
 
-  if !proxyWebsite
+  if !fetchedProxy # Check if the fetch was successful
+    L.error 'Proxy website data not found for ID', { id: process.env.PROXY_WEBSITE_ID }
     throw new Error "Proxy website not found"
 
-  server.listen proxyWebsite.port
+  # Assign the fetched data to the global variable
+  proxyWebsite = fetchedProxy 
+
+  server.listen proxyWebsite.port, ->
+    L 'Proxy process started and listening', { id: proxyWebsite._id, port: proxyWebsite.port }
 )
 
 if !module.parent

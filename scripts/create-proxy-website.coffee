@@ -23,13 +23,17 @@ run = ->
   await ProxyWebsites.deleteMany({})
 
   doc = new ProxyWebsites({
-    originalHost: 'https://thespectacledbean.com/'
+    originalHost: 'https://www.makersfund.com'
     injectScriptHeader: ''
     injectScriptFooter: ''
     stringReplacements: [
       {
-        find: 'THE SPECTACLED BEAN'
-        replace: 'THE PROXIED BEAN'
+        find: 'Makers Fund'
+        replace: 'Fake VC Group'
+      }
+      {
+        find: 'MakersFund'
+        replace: 'FakeVCGroup'
       }
     ]
   })
@@ -37,7 +41,9 @@ run = ->
   result = await doc.save()
   L 'Created proxy website', result
 
-  doc = new ProxyWebsites({
+  process.exit 0
+
+  doc2 = new ProxyWebsites({
     originalHost: 'https://blackmoonlilith.art.blog/'
     injectScriptHeader: ''
     injectScriptFooter: ''
@@ -53,7 +59,7 @@ run = ->
     ]
   })
 
-  result = await doc.save()
+  result = await doc2.save()
   L 'Created proxy website', result
 
   return { elapsed: new Date() - start }
