@@ -1,32 +1,43 @@
-# SpamWOW - Web Application & Proxy Service
+# SpamWOW - Email Delivery Platform & Web Proxy Service
 
 ## Overview
 
-SpamWOW is a Node.js application built with CoffeeScript, Express, Mongoose, and Redis. It provides a RESTful API for managing various entities like campaigns, domains, emails, and AWS accounts. A key feature is its ability to proxy external websites, allowing for dynamic content manipulation (script injection, string replacement) and management of these proxy instances.
+SpamWOW is a Node.js application designed as an **Email Delivery Platform**. Built with CoffeeScript, Express, Mongoose, and Redis, it provides a robust backend for managing email campaigns, tracking delivery events, handling bounces/complaints via an integrated SMTP server, and managing associated resources like domains and ESP accounts.
+
+Additionally, it includes a **sophisticated web proxy feature** for cloaking and modifying external websites on the fly.
 
 ## Features
 
-*   **RESTful API:** Exposes CRUD operations for various data models via automatically generated routes (`lib/autoExpose.coffee`).
-*   **Website Proxying:** Forks separate Node.js processes (`bin/proxy-website.coffee`) to proxy target websites.
-    *   Supports HTTPS/HTTP targets.
-    *   Handles URL rewriting to the proxy's host.
-    *   Injects custom scripts into `<head>` or before `</body>`.
-    *   Performs custom string replacements on text-based content.
-    *   Manages proxy process lifecycle (start, stop, restart, health checks).
-    *   Automatic port assignment within a configurable range.
-    *   Uses Redis for tracking running proxy processes.
-*   **Data Models:** Uses Mongoose (`lib/database.coffee`) for MongoDB object modeling, including:
-    *   `AwsAccounts`
-    *   `Campaigns`
-    *   `Domains`
-    *   `EmailDns`
-    *   `Emails`
-    *   `EspAccounts`
-    *   `Events`
-    *   `ProxyWebsites`
-*   **SMTP Server:** Includes a basic SMTP server (`smtp-server/server.coffee`) likely for receiving and processing emails (e.g., bounces, complaints).
+*   **Email Campaign Management:** Manage email campaigns, lists, and templates.
+*   **Domain & ESP Management:** Track sending domains, DNS records (DKIM/SPF potentially managed via scripts), and ESP account credentials.
+*   **Event Tracking:** Log email-related events (e.g., sends, opens, clicks - inferred, needs verification).
+*   **Integrated SMTP Server:** (`smtp-server/server.coffee`) Receives and processes incoming emails, identifying bounces and complaints.
+*   **RESTful API:** Exposes CRUD operations for data models via automatically generated routes (`lib/autoExpose.coffee`).
+*   **Website Proxying:** Includes a powerful system for proxying and modifying external websites (see details below).
 *   **Configuration:** Uses `.env` files for environment-specific settings (`lib/env.coffee`).
-*   **Scripts:** Provides utility scripts (`scripts/`) for tasks like database setup, creating test data, and managing proxy websites.
+*   **Scripts:** Provides utility scripts (`scripts/`) for setup and data management.
+*   **Data Models:** Uses Mongoose (`lib/database.coffee`) for MongoDB object modeling (Campaigns, Domains, Emails, ProxyWebsites, etc.).
+
+## Sophisticated Web Proxy
+
+The platform incorporates a powerful website proxying system designed for cloaking and dynamic content modification:
+
+*   **Process Management:** Each proxy runs as a separate, managed Node.js process (`bin/proxy-website.coffee`), forked from the main application.
+    *   Automatic start/stop/restart based on the `ProxyWebsite` model's `isActive` status and configuration changes (`originalHost`, `port`).
+    *   Robust process tracking using Redis (`proxy:process:*` keys) and PID management.
+    *   Health checks (`checkHealth` method) to monitor the status of running proxies via HTTP endpoints.
+    *   Graceful cleanup of resources on stop or removal.
+*   **Dynamic Content Manipulation:**
+    *   Supports proxying both HTTPS and HTTP target websites.
+    *   Rewrites URLs within HTML/CSS/JS content to point to the proxy host, maintaining site integrity under the new domain.
+    *   Injects custom JavaScript code into the `<head>` (`injectScriptHeader`) or just before the closing `</body>` (`injectScriptFooter`) tag of HTML pages.
+    *   Performs arbitrary string replacements (`stringReplacements`) within text-based web content (HTML, CSS, JS).
+    *   Handles various content encodings (gzip, deflate, brotli) for text modification.
+    *   Correctly pipes binary content (images, fonts) without modification.
+*   **Configuration & Management:**
+    *   Managed via the `ProxyWebsite` Mongoose model and its associated REST API endpoints.
+    *   Automatic port assignment within a configurable range (`PROXY_PORT_RANGE`) to avoid conflicts.
+    *   Static methods (`startAll`, `stopAll`, `listRunning`) for managing all proxy instances.
 
 ## Prerequisites
 
