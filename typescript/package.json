@@ -1,0 +1,12 @@
+{
+  "name": "spamwow-proxy-module",
+  "version": "1.0.0",
+  "description": "TypeScript module for handling reverse proxy logic (Bun)",
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/bun": "latest"
+  },
+  "author": "",
+  "license": "ISC",
+  "module": "./src/server.ts"
+}

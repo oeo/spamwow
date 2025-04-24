@@ -55,6 +55,8 @@
     "trk2": "^1.0.1"
   },
   "devDependencies": {
+    "@types/bun": "^1.2.10",
+    "@types/node": "^22.14.1",
     "minimist": "^1.2.8",
     "nodemon": "^3.0.3",
     "serverless-domain-manager": "^7.3.8"
